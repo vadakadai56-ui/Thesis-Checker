@@ -1,0 +1,52 @@
+# =============================================================================
+#  DEMO PROFILE — NOT A REAL UNIVERSITY RULE SET
+# =============================================================================
+# Every value below is made up so the engine can be developed and tested before
+# the RTU faculty formatting guideline arrives. Do NOT use it to judge a real
+# thesis. The real RTU profile is rtu-fcsite-bachelor.yaml.
+version: 1
+id: demo
+status: draft
+demo: true
+name: "DEMO profile (made-up values — not a real university)"
+university: "Demo University (not real)"
+faculty: "Demo Faculty"
+degree_level: any
+languages: [en]
+citation_style: author-date
+date_format: "DD.MM.YYYY."
+sources: []
+
+rules:
+  PAGE-01:
+    severity: error
+    autofix: true
+    expected: {top_cm: 2.0, bottom_cm: 2.0, left_cm: 3.0, right_cm: 2.0, tolerance_cm: 0.05}
+    rule_text: "DEMO: margins are top 2 cm, bottom 2 cm, left 3 cm, right 2 cm."
+    guideline_ref: "DEMO (no real guideline)"
+  PAGE-02:
+    severity: error
+    autofix: true
+    expected: {paper: A4}
+    rule_text: "DEMO: use A4 paper."
+    guideline_ref: "DEMO (no real guideline)"
+  TEXT-01:
+    severity: error
+    autofix: true
+    expected: {font: Times New Roman}
+    rule_text: "DEMO: body text is Times New Roman."
+    guideline_ref: "DEMO (no real guideline)"
+  TEXT-02:
+    severity: error
+    autofix: true
+    expected: {size_pt: 12}
+    rule_text: "DEMO: body text is 12 pt."
+    guideline_ref: "DEMO (no real guideline)"
+  HEAD-03:
+    severity: warning
+    autofix: false
+    rule_text: "DEMO: heading levels go 1 → 2 → 3 without skipping a level."
+    guideline_ref: "DEMO (no real guideline)"
+
+manual_checklist:
+  - "DEMO: this is the demo profile — pick the real university profile for your thesis."

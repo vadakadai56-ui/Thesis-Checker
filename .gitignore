@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Generated at build time (BUILD_PROMPT §3) — never commit
+public/pyodide/
+public/wheels/
+public/engine/
+public/profiles/
+
+# Node / build output (from stage 4)
+node_modules/
+dist/
+playwright-report/
+test-results/
+
+# Private: real thesis tests and licence-signing key — NEVER commit
+engine/tests/private/
+tools-private/
+
+# Marketing originals (stage 7b)
+marketing/raw/
+
+.DS_Store

@@ -1,0 +1,185 @@
+# =============================================================================
+#  RTU FCSITE — bachelor thesis profile — DRAFT
+# =============================================================================
+# Source of truth for the RTU rules. Compiled to public/profiles/*.json by
+# `python tools/compile_profiles.py`.
+#
+# HOW TO READ THIS FILE
+#   TODO          = waiting for the faculty formatting guideline. A rule whose
+#                   `expected` or `guideline_ref` is TODO is NOT checked; the app
+#                   lists it as "not yet checked". Never invent these values.
+#   (assumed)     = a default from BUILD_PROMPT that the owner may change.
+#   ai-slides / plag-slides = the two RTU FCSITE slide decks listed in `sources`.
+#   Severities are (assumed) unless a source says otherwise.
+#
+# The open items are listed for the owner in docs/rtu-profile-open-items.md.
+version: 1
+id: rtu-fcsite-bachelor
+status: draft
+name: "RTU FCSITE — Bachelor thesis (draft)"
+university: Riga Technical University
+faculty: Faculty of Computer Science, Information Technology and Energy
+programme: TODO
+degree_level: bachelor              # (assumed) master gets its own file later
+languages: [lv, en]                 # (assumed)
+citation_style: author-date         # (assumed) evidence: "(OpenAI, 2026)" in ai-slides p.4
+date_format: "DD.MM.YYYY."          # ai-slides p.4 ("[accessed DD.MM.YYYY.]")
+sources:
+  - {id: ai-slides, title: "AI generated text, Academic integrity assessment", file: docs/sources/rtu-fcsite-ai-generated-text-academic-integrity-EN.pdf}
+  - {id: plag-slides, title: "Academic integrity in theses (2026)", file: docs/sources/rtu-fcsite-academic-integrity-in-theses-2026.pdf}
+
+rules:
+  # ---------------------------------------------------------------- Page setup
+  PAGE-01: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PAGE-02:
+    severity: error
+    autofix: true
+    expected: {paper: A4}           # (assumed)
+    rule_text: "Use A4 paper."
+    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
+  PAGE-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PAGE-04: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+
+  # ---------------------------------------------------------------------- Text
+  TEXT-01: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-02: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-03: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-04:
+    severity: warning
+    autofix: true
+    expected: {alignment: justified}  # (assumed)
+    rule_text: "Body text is justified."
+    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
+  TEXT-05: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-06: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-07: {severity: info, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-08: {severity: info, autofix: true, rule_text: TODO, guideline_ref: TODO}
+
+  # ------------------------------------------------------------------ Headings
+  HEAD-01: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  HEAD-02: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  HEAD-03:
+    severity: warning
+    autofix: false
+    rule_text: "Heading levels go 1 → 2 → 3 without skipping a level."
+    guideline_ref: "(assumed) general practice — not yet confirmed by an RTU source"
+  HEAD-04: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  HEAD-05: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  HEAD-06: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+
+  # -------------------------------------------------------------- Page numbers
+  PGNUM-01: {severity: error, autofix: true, rule_text: TODO, guideline_ref: TODO}
+  PGNUM-02: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PGNUM-03: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+
+  # ----------------------------------------------------------------- Structure
+  STRUCT-01: {severity: error, autofix: false, blocking: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  STRUCT-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  STRUCT-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  STRUCT-04: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  STRUCT-05:
+    severity: info                  # info: only required if AI tools were used
+    autofix: false
+    rule_text: >-
+      If AI tools were used (also for grammar or translation), name them and what
+      they were used for in the Introduction ("Tools used in writing this thesis").
+    guideline_ref: "ai-slides p.5"
+
+  # ------------------------------------------------------------------ Contents
+  TOC-01: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  TOC-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  TOC-03: {severity: info, autofix: true, rule_text: TODO, guideline_ref: TODO}
+
+  # ---------------------------------------------------------- Figures & tables
+  FIG-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  FIG-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  FIG-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  FIG-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  TAB-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TAB-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TAB-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TAB-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  LIST-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+
+  # ---------------------------------------------------- Citations & references
+  CITE-01: {severity: error, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  CITE-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  CITE-03:
+    severity: warning
+    autofix: false
+    expected: {style: author-date}  # (assumed)
+    rule_text: "In-text citations use the author–date form, e.g. (Author, 2026)."
+    guideline_ref: "(assumed) evidence: example \"(OpenAI, 2026)\" in ai-slides p.4"
+  CITE-04:
+    severity: warning
+    autofix: false
+    expected: {min_words: 8}
+    rule_text: >-
+      Directly copied or directly translated text must be in quotation marks and
+      have a reference (mathematics excepted).
+    guideline_ref: "plag-slides p.6"
+  CITE-05:
+    severity: info
+    autofix: false
+    expected: {min_words: 120}      # (assumed) paragraph length threshold
+    rule_text: >-
+      Place references where the source is used, not only at the end of a
+      paragraph. Long literature-review paragraphs without any reference are
+      worth checking.
+    guideline_ref: "plag-slides p.5"
+  REF-01: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  REF-02:
+    severity: warning
+    autofix: false
+    expected: {order: alphabetical}  # (assumed) for author–date
+    rule_text: "The reference list is in alphabetical order."
+    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
+  REF-03: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  REF-04:
+    severity: info
+    autofix: false
+    rule_text: >-
+      Wikipedia, encyclopedias and lecture slides are secondary sources — also
+      cite a primary source.
+    guideline_ref: "plag-slides p.5"
+  REF-AI-01:
+    severity: error
+    autofix: false
+    rule_text: >-
+      If content was generated by an AI tool, give a reference: Developer. Tool
+      and version. Prompt: … Web address. [accessed date].
+    guideline_ref: "ai-slides p.4"
+
+  # --------------------------------------------------------------- Consistency
+  CONS-01: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  CONS-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  CONS-03: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
+
+  # ---------------------------------------------------------------- Title page
+  TITLE-01: {severity: error, autofix: false, blocking: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TITLE-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+
+structure:
+  required_sections: TODO
+  word_limits: TODO
+  literature_review_headings: TODO
+
+captions:
+  figure: TODO
+  table: TODO
+
+ai_disclosure:
+  heading_phrases:
+    en: ["Tools used in writing this"]    # ai-slides p.5
+    lv: [TODO]
+
+manual_checklist:
+  - "If any AI tool generated text or images, each use is referenced (developer, tool, prompt, link to chat, access date)."
+  - "AI tools used (also for grammar or translation) are named with their purpose in the Introduction (\"Tools used in writing this thesis\")."
+  - "Directly copied or directly translated text is in quotation marks with a reference (maths excepted)."
+  - "References are placed where the source is used, not only at paragraph end."
+  - "Reused parts of my own earlier work (e.g. bachelor thesis) are referenced."
+  - "Supervisor has signed."
+  - "Declaration of originality is signed."
+  - "Uploaded to the RTU system."
+  - "Latvian and English abstracts say the same thing."  # (assumed)

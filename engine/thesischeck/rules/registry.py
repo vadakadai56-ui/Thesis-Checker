@@ -1,0 +1,130 @@
+"""The rule registry: one place that maps a rule ID to its check function.
+
+How to write a rule (see also the future `thesischeck-new-rule` skill):
+
+    @rule("PAGE-02", title="Paper size", how_to_fix="Layout → Size → A4.")
+    def check_paper_size(ctx: RuleContext) -> None:
+        ...
+        ctx.report(message=..., location=..., expected=..., found=...)
+
+* A check function only READS `ctx.view` (a frozen DocumentView). It never changes
+  the document — only fixer.py / annotator.py write, and only on a copy.
+* Expected values come from `ctx.cfg.expected` (the profile), never hard-coded.
+* If a rule cannot run on this document (e.g. no headings at all), raise
+  `SkipRule("reason")` instead of reporting false errors.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass, field
+
+from ..document_view import DocumentView, ParagraphView, SectionView
+from ..model import Finding, Location, RuleConfig
+from ..rule_ids import RULE_CATEGORIES
+
+
+class SkipRule(Exception):
+    """Raised by a check function when the rule doesn't apply to this document."""
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
+@dataclass(frozen=True)
+class RuleSpec:
+    rule_id: str
+    category: str
+    title: str
+    how_to_fix: str
+    check: Callable[[RuleContext], None]
+    can_fix: bool = False  # True once a fix function exists (stage 3)
+
+
+@dataclass
+class RuleContext:
+    """Everything a check function needs, plus `report()` to record a problem."""
+
+    view: DocumentView
+    cfg: RuleConfig
+    spec: RuleSpec
+    findings: list[Finding] = field(default_factory=list)
+
+    def report(self, *, message: str, location: Location, expected: object, found: object) -> None:
+        self.findings.append(
+            Finding(
+                id="",  # numbered by the checker once all rules have run
+                rule_id=self.spec.rule_id,
+                category=self.spec.category,
+                severity=self.cfg.severity,
+                message=message,
+                rule_text=self.cfg.rule_text,
+                guideline_ref=self.cfg.guideline_ref,
+                location=location,
+                expected=expected,
+                found=found,
+                fixable=self.cfg.autofix and self.spec.can_fix,
+                how_to_fix=self.spec.how_to_fix,
+            )
+        )
+
+
+_REGISTRY: dict[str, RuleSpec] = {}
+
+
+def rule(rule_id: str, *, title: str, how_to_fix: str):
+    """Decorator that registers a check function under `rule_id`."""
+    if rule_id not in RULE_CATEGORIES:
+        raise ValueError(f"unknown rule ID {rule_id!r} (add it to rule_ids.py first)")
+
+    def decorator(fn: Callable[[RuleContext], None]) -> Callable[[RuleContext], None]:
+        if rule_id in _REGISTRY:
+            raise ValueError(f"rule {rule_id} registered twice")
+        _REGISTRY[rule_id] = RuleSpec(
+            rule_id=rule_id,
+            category=RULE_CATEGORIES[rule_id],
+            title=title,
+            how_to_fix=how_to_fix,
+            check=fn,
+        )
+        return fn
+
+    return decorator
+
+
+def get_rule(rule_id: str) -> RuleSpec | None:
+    return _REGISTRY.get(rule_id)
+
+
+def registered_rule_ids() -> list[str]:
+    return sorted(_REGISTRY)
+
+
+# ------------------------------------------------------- location helpers for rules
+
+
+def paragraph_location(p: ParagraphView) -> Location:
+    return Location(
+        part="body",
+        paragraph_index=p.index,
+        section_index=p.section_index,
+        page_estimate=p.page_estimate,
+        heading_path=p.heading_path,
+        snippet=p.snippet,
+    )
+
+
+def section_location(view: DocumentView, section: SectionView) -> Location:
+    """A section has no text of its own, so point at its first paragraph."""
+    first = view.first_paragraph_of_section(section.index)
+    if first is None:
+        return Location(part="body", section_index=section.index)
+    return Location(
+        part="body",
+        paragraph_index=first.index,
+        section_index=section.index,
+        page_estimate=first.page_estimate,
+        heading_path=first.heading_path,
+        snippet=first.snippet,
+    )

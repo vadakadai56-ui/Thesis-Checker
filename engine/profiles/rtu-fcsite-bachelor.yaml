@@ -20,6 +20,7 @@ version: 1
 id: rtu-fcsite-bachelor
 status: draft
 name: "RTU FCSITE — Bachelor thesis (draft)"
+short_name: RTU
 university: Riga Technical University
 faculty: Faculty of Computer Science, Information Technology and Energy
 programme: TODO

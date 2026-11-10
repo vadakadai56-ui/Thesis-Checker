@@ -1,8 +1,9 @@
 """ThesisCheck rules engine — plain Python, no browser code (BUILD_PROMPT §3, §7).
 
-Public API: check(), fix(), annotate(), score(). In stage 1 only check() works.
+Public API: check(), fix(), annotate(), score().
 """
 
+from . import fixer  # noqa: F401  (registers fix functions, so findings know they're fixable)
 from .api import ENGINE_VERSION, annotate, check, fix, score
 from .model import EngineError
 

@@ -167,6 +167,10 @@ def check_toc_fresh(ctx: RuleContext) -> None:
     toc = main_toc(ctx)
     if toc is None:
         raise SkipRule("No automatic table of contents (see TOC-01).")
+    if ctx.view.update_fields_on_open:
+        # The file asks Word to update every field when it is opened (the auto-fix
+        # sets this), so the contents will be refreshed then.
+        return
     entries = toc_entries(ctx, toc)
     joined = " ".join(p.text for p, *_ in entries).casefold()
     problem = None

@@ -10,7 +10,7 @@ never uploaded.
 
 The full plan is in [BUILD_PROMPT.md](BUILD_PROMPT.md).
 
-**Status: stage 2 of 8: all rules, readiness score, security.** For now there is
+**Status: stage 3 of 8: auto-fix and annotated copy.** For now there is
 a Python rules engine with a command line. The web app arrives in stages 4–6.
 
 ## What works now
@@ -25,6 +25,12 @@ a Python rules engine with a command line. The web app arrives in stages 4–6.
 - **All 53 rules of BUILD_PROMPT §5**, each tested with a synthetic sample that
   breaks exactly that rule.
 - The **readiness score** (0–100, fixed formula in `engine/thesischeck/scoring.py`).
+- **Auto-fix** (`fixer.py`) writes a NEW `<name>_fixed.docx`. It changes
+  formatting only (styles, paragraph settings, page setup, page numbers) and
+  never a word: if the words of the fixed copy differ from the original's, it
+  refuses. 20 rules can be fixed automatically.
+- **Annotated copy** (`annotator.py`) is the fixed copy plus one Word comment
+  (author "ThesisCheck") on every problem that is left.
 - Profiles: `demo` (made-up values, clearly labelled) and a draft
   `rtu-fcsite-bachelor`. The RTU layout values come from the official RTU thesis
   template (2024). Open items are in
@@ -50,6 +56,8 @@ Check a document:
 cd engine
 ../.venv/bin/python -m thesischeck check tests/samples/clean.docx --profile demo
 ../.venv/bin/python -m thesischeck check my-thesis.docx --profile rtu-fcsite-bachelor --json
+../.venv/bin/python -m thesischeck fix my-thesis.docx --profile rtu-fcsite-bachelor       # -> my-thesis_fixed.docx
+../.venv/bin/python -m thesischeck annotate my-thesis.docx --profile rtu-fcsite-bachelor  # -> my-thesis_annotated.docx
 ../.venv/bin/python tools/make_spelling_pairs.py  # regenerate the UK/US spelling list
 ```
 

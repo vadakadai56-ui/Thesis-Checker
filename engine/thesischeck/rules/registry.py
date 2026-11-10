@@ -42,7 +42,11 @@ class RuleSpec:
     title: str
     how_to_fix: str
     check: Callable[[RuleContext], None]
-    can_fix: bool = False  # True once a fix function exists (stage 3)
+
+    @property
+    def can_fix(self) -> bool:
+        """True if a fix function is registered for this rule (see thesischeck/fixes/)."""
+        return self.rule_id in _FIXERS
 
 
 @dataclass
@@ -105,6 +109,9 @@ class RuleContext:
 
 
 _REGISTRY: dict[str, RuleSpec] = {}
+# Fix functions, kept apart from the (read-only) check functions. They are only ever
+# called by fixer.py, on a COPY of the document.
+_FIXERS: dict[str, Callable[..., int]] = {}
 
 
 def rule(rule_id: str, *, title: str, how_to_fix: str):
@@ -125,6 +132,28 @@ def rule(rule_id: str, *, title: str, how_to_fix: str):
         return fn
 
     return decorator
+
+
+def fixer(rule_id: str):
+    """Decorator that registers a fix function for `rule_id`.
+
+    A fix function receives a FixContext (see fixer.py) and returns how many
+    changes it made. It may change formatting only — never the words.
+    """
+    if rule_id not in RULE_CATEGORIES:
+        raise ValueError(f"unknown rule ID {rule_id!r}")
+
+    def decorator(fn: Callable[..., int]) -> Callable[..., int]:
+        if rule_id in _FIXERS:
+            raise ValueError(f"fix for {rule_id} registered twice")
+        _FIXERS[rule_id] = fn
+        return fn
+
+    return decorator
+
+
+def get_fixer(rule_id: str) -> Callable[..., int] | None:
+    return _FIXERS.get(rule_id)
 
 
 def get_rule(rule_id: str) -> RuleSpec | None:

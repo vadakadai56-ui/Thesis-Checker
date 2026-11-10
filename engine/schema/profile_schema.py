@@ -326,6 +326,7 @@ class ProfileModel(_Strict):
     id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
     status: Literal["draft", "verified"]
     name: str
+    short_name: str | None = None  # used in comments: "RTU rule: …"
     demo: bool = False
     university: str
     faculty: str | None = None

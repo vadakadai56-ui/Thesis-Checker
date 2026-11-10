@@ -9,6 +9,7 @@ id: demo
 status: draft
 demo: true
 name: "DEMO profile (made-up values — not a real university)"
+short_name: DEMO
 university: "Demo University (not real)"
 faculty: "Demo Faculty"
 degree_level: any

@@ -1,4 +1,7 @@
-"""Command line:  python -m thesischeck check FILE.docx [--profile demo] [--json]
+"""Command line:
+    python -m thesischeck check    FILE.docx [--profile demo] [--json]
+    python -m thesischeck fix      FILE.docx [-o FILE_fixed.docx]
+    python -m thesischeck annotate FILE.docx [-o FILE_annotated.docx]
 
 Run it from the `engine/` folder. Profiles are the COMPILED JSON files made by
 `python tools/compile_profiles.py` (written to ../public/profiles/).
@@ -12,7 +15,7 @@ import sys
 from datetime import UTC, date, datetime, time
 from pathlib import Path
 
-from .api import check
+from .api import annotate, check, fix
 from .model import EngineError
 from .profile_loader import load_profile_file
 from .rule_ids import CATEGORIES
@@ -78,15 +81,14 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--profiles-dir", type=Path, default=DEFAULT_PROFILES_DIR)
         p.add_argument("--json", action="store_true", help="print the raw report JSON")
         p.add_argument(
+            "-o", "--output", type=Path, help="where to save the new file (fix/annotate)"
+        )
+        p.add_argument(
             "--today",
             type=date.fromisoformat,
             help="pretend today is YYYY-MM-DD (for reproducible checks/tests)",
         )
     args = parser.parse_args(argv)
-
-    if args.command in ("fix", "annotate"):
-        print(f"'{args.command}' arrives in stage 3.", file=sys.stderr)
-        return 2
 
     profile_path = _resolve_profile_path(args.profile, args.profiles_dir)
     if not profile_path.exists():
@@ -98,7 +100,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         now = datetime.combine(args.today, time(12), UTC) if args.today else None
-        report = check(
+        run = {"check": check, "fix": fix, "annotate": annotate}[args.command]
+        result = run(
             args.file.read_bytes(),
             load_profile_file(profile_path),
             file_name=args.file.name,
@@ -107,6 +110,19 @@ def main(argv: list[str] | None = None) -> int:
     except EngineError as err:
         print(f"{err.code}: {err.message}", file=sys.stderr)
         return 3
+
+    if args.command == "check":
+        report = result
+    else:
+        report = result["report"]
+        output = args.output or args.file.with_name(result["file_name"])
+        output.write_bytes(result["bytes"])
+        before, after = result["before"]["score"]["value"], report["score"]["value"]
+        print(f"Saved {output}  (score {before} → {after})", file=sys.stderr)
+        for item in result["fixes"]:
+            print(f"  fixed [{item['rule_id']}] {item['title']}", file=sys.stderr)
+        if args.command == "annotate":
+            print(f"  {result['comments']} comment(s) added", file=sys.stderr)
 
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))

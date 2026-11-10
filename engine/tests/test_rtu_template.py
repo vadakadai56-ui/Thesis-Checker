@@ -91,3 +91,15 @@ def test_without_non_body_styles_code_would_be_flagged(rtu_profile):
     profile = {**rtu_profile, "text": {"non_body_styles": []}}
     found = rule_ids(run(template_as_docx(), profile))
     assert "TEXT-01" in found and "TEXT-02" in found
+
+
+def test_template_fix_and_annotate(rtu_profile):
+    """Auto-fix repairs the template's formatting problems; content problems remain."""
+    from conftest import FIXED_NOW
+    from thesischeck import annotate
+
+    result = annotate(template_as_docx(), rtu_profile, "template.docx", now=FIXED_NOW)
+    left = sorted(f["rule_id"] for f in result["report"]["findings"])
+    assert left == ["STRUCT-05", "TITLE-01", "TITLE-01"]  # need the student, not a fix
+    assert {x["rule_id"] for x in result["fixes"]} == {"TEXT-06", "PGNUM-02"}
+    assert result["comments"] == 3

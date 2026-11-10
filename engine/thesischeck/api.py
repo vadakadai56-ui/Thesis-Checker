@@ -66,12 +66,18 @@ def check(
     return report.to_dict()
 
 
-def fix(*_args: Any, **_kwargs: Any) -> Any:
-    raise NotImplementedError("Auto-fix arrives in stage 3.")
+def fix(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Auto-fix: see fixer.fix()."""
+    from .fixer import fix as _fix
+
+    return _fix(*args, **kwargs)
 
 
-def annotate(*_args: Any, **_kwargs: Any) -> Any:
-    raise NotImplementedError("The annotated copy arrives in stage 3.")
+def annotate(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Annotated copy: see annotator.annotate()."""
+    from .annotator import annotate as _annotate
+
+    return _annotate(*args, **kwargs)
 
 
 def score(report: dict[str, Any]) -> dict[str, Any]:

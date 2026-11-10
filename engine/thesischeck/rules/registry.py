@@ -18,9 +18,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import date
+from typing import Any
 
 from ..document_view import DocumentView, ParagraphView, SectionView
-from ..model import Finding, Location, RuleConfig
+from ..model import Finding, Location, Profile, RuleConfig
+from ..regions import Regions
 from ..rule_ids import RULE_CATEGORIES
 
 
@@ -49,9 +52,40 @@ class RuleContext:
     view: DocumentView
     cfg: RuleConfig
     spec: RuleSpec
+    regions: Regions
+    profile: Profile
+    today: date
     findings: list[Finding] = field(default_factory=list)
 
-    def report(self, *, message: str, location: Location, expected: object, found: object) -> None:
+    @property
+    def expected(self) -> Any:
+        """The profile's expected value for this rule ({} if it has none)."""
+        return self.cfg.expected if self.cfg.expected is not None else {}
+
+    def body_paragraphs(self) -> list[ParagraphView]:
+        """Body text, minus the table of contents (hand-typed contents lines)."""
+        return [p for p in self.view.body_paragraphs if not self.regions.contains("toc", p.index)]
+
+    def setting(self, *path: str, default: Any = None) -> Any:
+        """A value from the profile's other sections, e.g. setting("captions", "figure")."""
+        value: Any = self.profile.extra
+        for key in path:
+            if not isinstance(value, dict) or key not in value:
+                return default
+            value = value[key]
+        return value
+
+    def report(
+        self,
+        *,
+        message: str,
+        location: Location,
+        expected: object,
+        found: object,
+        fixable: bool | None = None,
+    ) -> None:
+        """Record one problem. `fixable=False` marks a case the fixer can't handle."""
+        can_fix = self.cfg.autofix and self.spec.can_fix and fixable is not False
         self.findings.append(
             Finding(
                 id="",  # numbered by the checker once all rules have run
@@ -64,7 +98,7 @@ class RuleContext:
                 location=location,
                 expected=expected,
                 found=found,
-                fixable=self.cfg.autofix and self.spec.can_fix,
+                fixable=can_fix,
                 how_to_fix=self.spec.how_to_fix,
             )
         )
@@ -113,6 +147,14 @@ def paragraph_location(p: ParagraphView) -> Location:
         heading_path=p.heading_path,
         snippet=p.snippet,
     )
+
+
+def settings_location() -> Location:
+    return Location(part="settings")
+
+
+def part_location(part: str) -> Location:
+    return Location(part=part)
 
 
 def section_location(view: DocumentView, section: SectionView) -> Location:

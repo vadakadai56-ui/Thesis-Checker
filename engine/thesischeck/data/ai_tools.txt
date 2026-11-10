@@ -1,0 +1,21 @@
+# Known AI tool developers and their tools. Edit freely; no code change needed.
+# Format:  Developer: Tool, Tool, …
+# Used by REF-AI-01 to recognise AI-tool references. An entry counts as an AI-tool
+# reference when it names a TOOL and also the DEVELOPER or the word "Prompt",
+# so that e.g. an author called Claude is not mistaken for the AI tool.
+OpenAI: ChatGPT, GPT-4, GPT-4o, GPT-5, DALL-E, DALL·E, Sora, Codex, o1, o3
+Anthropic: Claude
+Google: Gemini, Bard, NotebookLM, Imagen
+Microsoft: Copilot, Bing Chat
+GitHub: GitHub Copilot
+Meta: Llama, Meta AI
+Mistral AI: Le Chat, Mistral
+DeepSeek: DeepSeek
+xAI: Grok
+Perplexity AI: Perplexity
+Midjourney: Midjourney
+Stability AI: Stable Diffusion
+DeepL: DeepL, DeepL Write
+Grammarly: Grammarly
+QuillBot: QuillBot
+Tilde: Tilde MT, Tildes Biroja

@@ -1,9 +1,9 @@
 # =============================================================================
 #  DEMO PROFILE — NOT A REAL UNIVERSITY RULE SET
 # =============================================================================
-# Every value below is made up so the engine can be developed and tested before
-# the RTU faculty formatting guideline arrives. Do NOT use it to judge a real
-# thesis. The real RTU profile is rtu-fcsite-bachelor.yaml.
+# Every value below is made up so the engine can be developed and tested with
+# synthetic samples (tools/make_samples.py). Do NOT use it to judge a real thesis.
+# The real RTU profile is rtu-fcsite-bachelor.yaml.
 version: 1
 id: demo
 status: draft
@@ -18,35 +18,113 @@ date_format: "DD.MM.YYYY."
 sources: []
 
 rules:
-  PAGE-01:
+  # ---------------------------------------------------------------- Page setup
+  PAGE-01: {severity: error, autofix: true, expected: {top_cm: 2.0, bottom_cm: 2.0, left_cm: 3.0, right_cm: 2.0}, rule_text: "DEMO: margins top 2, bottom 2, left 3, right 2 cm.", guideline_ref: "DEMO (no real guideline)"}
+  PAGE-02: {severity: error, autofix: true, expected: {paper: A4}, rule_text: "DEMO: A4 paper.", guideline_ref: "DEMO (no real guideline)"}
+  PAGE-03: {severity: warning, autofix: false, expected: {landscape: appendices_only}, rule_text: "DEMO: landscape pages only in the appendices.", guideline_ref: "DEMO (no real guideline)"}
+  PAGE-04: {severity: warning, autofix: true, expected: {gutter_cm: 0, mirror_margins: false}, rule_text: "DEMO: no gutter, no mirror margins.", guideline_ref: "DEMO (no real guideline)"}
+  # ---------------------------------------------------------------------- Text
+  TEXT-01: {severity: error, autofix: true, expected: {font: Times New Roman}, rule_text: "DEMO: body text is Times New Roman.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-02: {severity: error, autofix: true, expected: {size_pt: 12}, rule_text: "DEMO: body text is 12 pt.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-03: {severity: error, autofix: true, expected: {line_spacing: 1.5}, rule_text: "DEMO: 1.5 line spacing.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-04: {severity: warning, autofix: true, expected: {alignment: justified}, rule_text: "DEMO: body text is justified.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-05: {severity: warning, autofix: true, expected: {before_pt: 0, after_pt: 0}, rule_text: "DEMO: no space before/after paragraphs.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-06: {severity: warning, autofix: true, expected: {first_line_cm: 1.25}, rule_text: "DEMO: first-line indent 1.25 cm.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-07: {severity: info, autofix: true, expected: {max_percent: 50}, rule_text: "DEMO: format with styles, not direct formatting.", guideline_ref: "DEMO (no real guideline)"}
+  TEXT-08: {severity: info, autofix: true, expected: {max_consecutive_empty: 1}, rule_text: "DEMO: don't use empty lines for spacing.", guideline_ref: "DEMO (no real guideline)"}
+  # ------------------------------------------------------------------ Headings
+  HEAD-01: {severity: warning, autofix: false, expected: {max_words: 12}, rule_text: "DEMO: headings use heading styles.", guideline_ref: "DEMO (no real guideline)"}
+  HEAD-02:
     severity: error
     autofix: true
-    expected: {top_cm: 2.0, bottom_cm: 2.0, left_cm: 3.0, right_cm: 2.0, tolerance_cm: 0.05}
-    rule_text: "DEMO: margins are top 2 cm, bottom 2 cm, left 3 cm, right 2 cm."
+    expected:
+      1: {font: Times New Roman, size_pt: 16, bold: true, align: center}
+      2: {font: Times New Roman, size_pt: 14, bold: true, align: left}
+      3: {font: Times New Roman, size_pt: 12, bold: true, align: left}
+    rule_text: "DEMO: headings 16/14/12 pt bold Times New Roman; level 1 centred."
     guideline_ref: "DEMO (no real guideline)"
-  PAGE-02:
-    severity: error
-    autofix: true
-    expected: {paper: A4}
-    rule_text: "DEMO: use A4 paper."
-    guideline_ref: "DEMO (no real guideline)"
-  TEXT-01:
-    severity: error
-    autofix: true
-    expected: {font: Times New Roman}
-    rule_text: "DEMO: body text is Times New Roman."
-    guideline_ref: "DEMO (no real guideline)"
-  TEXT-02:
-    severity: error
-    autofix: true
-    expected: {size_pt: 12}
-    rule_text: "DEMO: body text is 12 pt."
-    guideline_ref: "DEMO (no real guideline)"
-  HEAD-03:
+  HEAD-03: {severity: warning, autofix: false, rule_text: "DEMO: heading levels go 1 → 2 → 3 without skipping.", guideline_ref: "DEMO (no real guideline)"}
+  HEAD-04:
     severity: warning
-    autofix: false
-    rule_text: "DEMO: heading levels go 1 → 2 → 3 without skipping a level."
+    autofix: true
+    expected:
+      format: ["1.", "1.1.", "1.1.1."]
+      unnumbered: [Abstract, Contents, Introduction, Conclusions, References, Appendices]
+    rule_text: "DEMO: chapters numbered 1., 1.1., 1.1.1.; front and back matter unnumbered."
     guideline_ref: "DEMO (no real guideline)"
+  HEAD-05: {severity: warning, autofix: true, expected: {1: all_caps}, rule_text: "DEMO: level-1 headings in capitals.", guideline_ref: "DEMO (no real guideline)"}
+  HEAD-06: {severity: warning, autofix: true, expected: {new_page: true}, rule_text: "DEMO: chapters start on a new page.", guideline_ref: "DEMO (no real guideline)"}
+  # -------------------------------------------------------------- Page numbers
+  PGNUM-01: {severity: error, autofix: true, rule_text: "DEMO: pages are numbered.", guideline_ref: "DEMO (no real guideline)"}
+  PGNUM-02: {severity: warning, autofix: true, expected: {position: bottom_center, format: arabic}, rule_text: "DEMO: page numbers bottom centre, Arabic.", guideline_ref: "DEMO (no real guideline)"}
+  PGNUM-03: {severity: warning, autofix: true, expected: {title_page_shows_number: false, title_page_counted: false}, rule_text: "DEMO: no number on the title page; numbering starts after it.", guideline_ref: "DEMO (no real guideline)"}
+  # ----------------------------------------------------------------- Structure
+  STRUCT-01: {severity: error, autofix: false, blocking: true, rule_text: "DEMO: all required parts are present.", guideline_ref: "DEMO (no real guideline)"}
+  STRUCT-02: {severity: warning, autofix: false, rule_text: "DEMO: parts in the required order.", guideline_ref: "DEMO (no real guideline)"}
+  STRUCT-03: {severity: warning, autofix: false, expected: {sections: [abstract], max_pages: 1, keywords_min: 3, keywords_max: 5}, rule_text: "DEMO: abstract at most 1 page with 3–5 key words.", guideline_ref: "DEMO (no real guideline)"}
+  STRUCT-04: {severity: warning, autofix: false, expected: {sections: {introduction: {max_pages: 2}}}, rule_text: "DEMO: introduction at most 2 pages.", guideline_ref: "DEMO (no real guideline)"}
+  STRUCT-05: {severity: info, autofix: false, rule_text: "DEMO: name AI tools used in the Introduction.", guideline_ref: "DEMO (no real guideline)"}
+  # ------------------------------------------------------------------ Contents
+  TOC-01: {severity: warning, autofix: false, rule_text: "DEMO: automatic table of contents.", guideline_ref: "DEMO (no real guideline)"}
+  TOC-02: {severity: warning, autofix: false, rule_text: "DEMO: contents match the headings.", guideline_ref: "DEMO (no real guideline)"}
+  TOC-03: {severity: info, autofix: true, rule_text: "DEMO: contents are up to date.", guideline_ref: "DEMO (no real guideline)"}
+  # ---------------------------------------------------------- Figures & tables
+  FIG-01: {severity: warning, autofix: false, rule_text: "DEMO: every figure has a caption \"Fig. 1.1. Title\".", guideline_ref: "DEMO (no real guideline)"}
+  FIG-02: {severity: warning, autofix: false, rule_text: "DEMO: figures numbered per chapter.", guideline_ref: "DEMO (no real guideline)"}
+  FIG-03: {severity: warning, autofix: false, rule_text: "DEMO: figure captions below the figure.", guideline_ref: "DEMO (no real guideline)"}
+  FIG-04: {severity: info, autofix: false, rule_text: "DEMO: every figure is mentioned in the text.", guideline_ref: "DEMO (no real guideline)"}
+  TAB-01: {severity: warning, autofix: false, rule_text: "DEMO: every table has a caption \"Table 1.1. Title\".", guideline_ref: "DEMO (no real guideline)"}
+  TAB-02: {severity: warning, autofix: false, rule_text: "DEMO: tables numbered per chapter.", guideline_ref: "DEMO (no real guideline)"}
+  TAB-03: {severity: warning, autofix: false, rule_text: "DEMO: table captions above the table.", guideline_ref: "DEMO (no real guideline)"}
+  TAB-04: {severity: info, autofix: false, rule_text: "DEMO: every table is mentioned in the text.", guideline_ref: "DEMO (no real guideline)"}
+  LIST-01: {severity: warning, autofix: false, expected: {required: false}, rule_text: "DEMO: a list of figures, if present, matches the captions.", guideline_ref: "DEMO (no real guideline)"}
+  # ---------------------------------------------------- Citations & references
+  CITE-01: {severity: error, autofix: false, rule_text: "DEMO: every citation has a reference.", guideline_ref: "DEMO (no real guideline)"}
+  CITE-02: {severity: warning, autofix: false, rule_text: "DEMO: every reference is cited.", guideline_ref: "DEMO (no real guideline)"}
+  CITE-03: {severity: warning, autofix: false, expected: {style: author-date}, rule_text: "DEMO: citations like (Author, 2026).", guideline_ref: "DEMO (no real guideline)"}
+  CITE-04: {severity: warning, autofix: false, expected: {min_words: 8}, rule_text: "DEMO: quotations have a reference.", guideline_ref: "DEMO (no real guideline)"}
+  CITE-05: {severity: info, autofix: false, expected: {min_words: 120}, rule_text: "DEMO: long literature-review paragraphs have references.", guideline_ref: "DEMO (no real guideline)"}
+  REF-01: {severity: warning, autofix: false, rule_text: "DEMO: references have author, year, title; online sources a URL and access date.", guideline_ref: "DEMO (no real guideline)"}
+  REF-02: {severity: warning, autofix: false, expected: {order: alphabetical}, rule_text: "DEMO: references in alphabetical order.", guideline_ref: "DEMO (no real guideline)"}
+  REF-03: {severity: warning, autofix: true, expected: {hanging_indent_cm: 1.0, line_spacing: 1.5, before_pt: 0, after_pt: 0}, rule_text: "DEMO: references have a 1 cm hanging indent.", guideline_ref: "DEMO (no real guideline)"}
+  REF-04: {severity: info, autofix: false, rule_text: "DEMO: also cite primary sources.", guideline_ref: "DEMO (no real guideline)"}
+  REF-AI-01: {severity: error, autofix: false, rule_text: "DEMO: AI tool references are complete.", guideline_ref: "DEMO (no real guideline)"}
+  # --------------------------------------------------------------- Consistency
+  CONS-01: {severity: info, autofix: false, rule_text: "DEMO: use UK or US spelling consistently.", guideline_ref: "DEMO (no real guideline)"}
+  CONS-02: {severity: warning, autofix: false, expected: {allow: []}, rule_text: "DEMO: define abbreviations at first use.", guideline_ref: "DEMO (no real guideline)"}
+  CONS-03: {severity: info, autofix: false, rule_text: "DEMO: write each term the same way.", guideline_ref: "DEMO (no real guideline)"}
+  # ---------------------------------------------------------------- Title page
+  TITLE-01: {severity: error, autofix: false, blocking: true, rule_text: "DEMO: the title page has all fields.", guideline_ref: "DEMO (no real guideline)"}
+  TITLE-02: {severity: warning, autofix: false, rule_text: "DEMO: the title page shows the current year.", guideline_ref: "DEMO (no real guideline)"}
+
+structure:
+  sections:
+    abstract: {label: Abstract, headings: [Abstract]}
+    toc: {label: Contents, headings: [Contents, Table of contents]}
+    introduction: {label: Introduction, headings: [Introduction]}
+    conclusions: {label: Conclusions, headings: [Conclusions]}
+    references: {label: References, headings: [References]}
+    appendixes: {label: Appendices, headings: [Appendices]}
+  required_order: [title_page, abstract, toc, introduction, chapters, conclusions, references]
+  optional: [{name: appendixes, after: references}]
+  keyword_labels: ["Keywords"]
+  literature_review_headings: ["Theory"]
+
+captions:
+  figure: {label: "Fig.", per_chapter: true, position: below}
+  table: {label: "Table", per_chapter: true, position: above}
+
+title_page:
+  fields:
+    - {id: university, label: "University name", patterns: ["demo university"]}
+    - {id: work_type, label: "Type of work", patterns: ["bachelor thesis"]}
+    - {id: adviser, label: "Supervisor", patterns: ["supervisor"]}
+    - {id: city_year, label: "City and year", patterns: ['demo city\s+\d{4}']}
+    - {id: student_name, label: "Student's name"}   # not checkable automatically
+
+ai_disclosure:
+  heading_phrases:
+    en: ["Tools used in writing this thesis"]
 
 manual_checklist:
   - "DEMO: this is the demo profile — pick the real university profile for your thesis."

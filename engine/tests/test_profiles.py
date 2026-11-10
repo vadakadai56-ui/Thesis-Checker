@@ -68,9 +68,9 @@ def test_rtu_pending_rules_are_reported_as_not_checked(rtu_profile):
     report = run_sample("clean", rtu_profile)
     skipped = {s["rule_id"]: s["reason"] for s in report["skipped_rules"]}
     assert skipped["PAGE-03"] == REASON_PENDING
-    assert skipped["REF-AI-01"] == REASON_NOT_IMPLEMENTED
-    # clean.docx follows the DEMO margins, so under RTU only the margins differ.
-    assert rule_ids(report) == ["PAGE-01"]
+    assert REASON_NOT_IMPLEMENTED not in skipped.values()  # every rule exists now
+    # clean.docx follows the DEMO profile, so the RTU margins differ.
+    assert "PAGE-01" in rule_ids(report)
 
 
 def test_todo_not_allowed_in_verified_profile():

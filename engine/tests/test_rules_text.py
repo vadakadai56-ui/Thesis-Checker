@@ -61,15 +61,16 @@ def test_font_inherited_through_based_on_chain(demo_profile):
 
 
 def test_title_page_and_headings_are_not_body_text(demo_profile):
-    """Title page (before first heading) and headings may use other fonts."""
+    """Title page (before first heading) and headings are not checked by TEXT-01."""
     doc = make_clean()
     doc.paragraphs[0].runs[0].font.name = "Arial"  # the Title
     for p in doc.paragraphs:
         if p.style.name.startswith("Heading"):
             for r in p.runs:
-                r.font.size = None
                 r.font.name = "Arial"
-    assert rule_ids(run_doc(doc, demo_profile)) == []
+    found = rule_ids(run_doc(doc, demo_profile))
+    assert "TEXT-01" not in found
+    assert "HEAD-02" in found  # heading fonts are HEAD-02's job
 
 
 def test_tracked_deletion_is_ignored(demo_profile):
@@ -108,9 +109,11 @@ def test_profile_non_body_styles_are_skipped(demo_profile):
 
     doc = make_clean()
     code = doc.styles.add_style("Code", WD_STYLE_TYPE.PARAGRAPH)
+    code.base_style = doc.styles["Normal"]
     code.font.name = "Arial Narrow"
     code.font.size = Pt(11)
-    doc.add_paragraph("print('hello')", style=code)
+    after = next(p for p in doc.paragraphs if p.text.startswith("Tools used"))
+    after.insert_paragraph_before("print('hello')", style=code)
     assert sorted(rule_ids(run_doc(doc, demo_profile))) == ["TEXT-01", "TEXT-02"]
 
     profile = {**demo_profile, "text": {"non_body_styles": ["code"]}}  # case-insensitive

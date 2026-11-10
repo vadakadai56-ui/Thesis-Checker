@@ -24,5 +24,10 @@ target-version = "py314"
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003"]  # we use typographic quotes/dashes on purpose
 
+[tool.ruff.lint.per-file-ignores]
+# The sample generator holds long lines of synthetic thesis text and one-line
+# "break exactly one rule" recipes; wrapping them would make them harder to read.
+"tools/make_samples.py" = ["E501"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["thesischeck", "schema", "tools", "conftest"]

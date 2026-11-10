@@ -22,37 +22,36 @@ def test_bad_sample_gives_exactly_that_finding(rule_id, demo_profile):
 def test_page01_names_side_and_values(demo_profile):
     (finding,) = run_sample("PAGE-01", demo_profile)["findings"]
     assert "left" in finding["message"]
-    assert "Section 1" in finding["message"]
+    assert "Section 2" in finding["message"]  # section 1 is the title page
     assert "left 2.50 cm" in finding["found"]
     assert "left 3.00 cm" in finding["expected"]
-    assert finding["location"]["section_index"] == 0
+    assert finding["location"]["section_index"] == 1
 
 
 def test_page01_tolerance(demo_profile):
     within = make_clean()
-    within.sections[0].left_margin = Cm(3.04)  # inside ±0.05 cm
+    within.sections[1].left_margin = Cm(3.04)  # inside ±0.05 cm
     assert "PAGE-01" not in rule_ids(run_doc(within, demo_profile))
 
     outside = make_clean()
-    outside.sections[0].left_margin = Cm(3.1)
+    outside.sections[1].left_margin = Cm(3.1)
     assert rule_ids(run_doc(outside, demo_profile)) == ["PAGE-01"]
 
 
-def test_page01_second_section_is_named(demo_profile):
+def test_page01_section_is_named(demo_profile):
     doc = make_clean()
-    extra = doc.add_section()
-    extra.right_margin = Cm(4)
-    doc.add_paragraph("Appendix text.")
+    doc.sections[1].right_margin = Cm(4)
     (finding,) = run_doc(doc, demo_profile)["findings"]
     assert finding["rule_id"] == "PAGE-01"
     assert finding["message"].startswith("Section 2:")
     assert finding["location"]["section_index"] == 1
 
 
-def test_landscape_section_with_rotated_margins_is_ok(demo_profile):
+def test_landscape_appendix_with_rotated_margins_is_ok(demo_profile):
     report = run_doc(make_landscape_rotated(), demo_profile)
     assert "PAGE-01" not in rule_ids(report)
     assert "PAGE-02" not in rule_ids(report)  # landscape A4 is still A4
+    assert "PAGE-03" not in rule_ids(report)  # landscape is allowed in the appendices
 
 
 def test_page02_reports_found_size(demo_profile):

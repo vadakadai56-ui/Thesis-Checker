@@ -163,7 +163,7 @@ rules:
   PGNUM-03:
     severity: warning
     autofix: true
-    expected: {title_page_shows_number: false, title_page_counted: false, first_number_on: assessment_sheet}
+    expected: {title_page_shows_number: false, title_page_counted: false}
     rule_text: >-
       The title page has no page number and is not counted; numbering starts at 1
       on the Work Performance and Assessment Sheet.
@@ -174,7 +174,6 @@ rules:
     severity: error
     autofix: false
     blocking: true
-    expected: {from: structure.required_sections}
     rule_text: >-
       The thesis contains: title page, Work Performance and Assessment Sheet,
       ABSTRACT, ANOTĀCIJA, TABLE OF CONTENTS, INTRODUCTION, chapters, RESULTS AND
@@ -183,13 +182,12 @@ rules:
   STRUCT-02:
     severity: warning
     autofix: false
-    expected: {from: structure.required_sections}
     rule_text: "The parts are in the template's order."
     guideline_ref: "rtu-template-2024: document structure"
   STRUCT-03:
     severity: warning
     autofix: false
-    expected: {max_pages: 1, keywords_min: 3, keywords_max: 5}
+    expected: {sections: [abstract, anotacija], max_pages: 1, keywords_min: 3, keywords_max: 5}
     rule_text: >-
       The Abstract has 3–5 key words and is at most 1 page; the Anotācija is its
       Latvian translation. (Report only — ThesisCheck never shortens text.)
@@ -197,9 +195,13 @@ rules:
   STRUCT-04:
     severity: warning
     autofix: false
-    # Only section lengths are in the template; total thesis length is still unknown.
-    expected: {introduction_pages: [1, 2], conclusions_pages: [1, 3], total: TODO}
-    rule_text: "Introduction 1–2 pages; Results and conclusions 1–3 pages; total length: TODO."
+    # Only these two lengths are in the template; the total thesis length is still
+    # unknown (open item) and is not checked.
+    expected:
+      sections:
+        introduction: {min_pages: 1, max_pages: 2}
+        conclusions: {min_pages: 1, max_pages: 3}
+    rule_text: "Introduction 1–2 pages; Results and conclusions 1–3 pages."
     guideline_ref: "rtu-template-2024: INTRODUCTION and RESULTS AND CONCLUSIONS pages"
   STRUCT-05:
     severity: info                  # info: only required if AI tools were used
@@ -230,26 +232,22 @@ rules:
   FIG-01:
     severity: warning
     autofix: false
-    expected: {from: captions.figure}
     rule_text: "Every figure has a caption like \"Fig. 2.1. Title of the figure\" (style 'Figure-name')."
     guideline_ref: "rtu-template-2024: example figure, style 'Figure-name'"
   FIG-02:
     severity: warning
     autofix: false
-    expected: {from: captions.figure}
     rule_text: "Figures are numbered per chapter: Fig. 2.1., Fig. 2.2., …"
     guideline_ref: "rtu-template-2024: example figure"
   FIG-03:
     severity: warning
     autofix: false
-    expected: {from: captions.figure}
     rule_text: "The figure caption is BELOW the figure, centred, bold."
     guideline_ref: "rtu-template-2024: example figure, style 'Figure-name'"
   FIG-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
   TAB-01:
     severity: warning
     autofix: false
-    expected: {from: captions.table}
     rule_text: >-
       Every table has a number line "Table 2.1" (right-aligned, bold) and a name
       line (centred, bold) above it (styles 'Table-number', 'Table-name').
@@ -257,13 +255,11 @@ rules:
   TAB-02:
     severity: warning
     autofix: false
-    expected: {from: captions.table}
     rule_text: "Tables are numbered per chapter: Table 2.1, Table 2.2, …"
     guideline_ref: "rtu-template-2024: example table"
   TAB-03:
     severity: warning
     autofix: false
-    expected: {from: captions.table}
     rule_text: "The table number and name are ABOVE the table."
     guideline_ref: "rtu-template-2024: example table"
   TAB-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
@@ -333,7 +329,6 @@ rules:
     severity: error
     autofix: false
     blocking: true
-    expected: {from: title_page.fields}
     rule_text: >-
       The title page shows: RIGA TECHNICAL UNIVERSITY, the faculty, the institute,
       the student's name and surname, the study programme, the student ID number,
@@ -348,35 +343,50 @@ rules:
 
 text:
   # Styles the template formats differently from body text on purpose, so the
-  # body font/size rules skip them (rtu-template-2024 list of styles):
-  #   Code = Arial Narrow 11 pt, Table-explanation = 10 pt,
-  #   Appendices-heading = 22 pt bold capitals, Formulas = equation lines.
-  non_body_styles: [Code, Table-explanation, Appendices-heading, Formulas]
+  # body-text rules skip them (rtu-template-2024 list of styles):
+  #   Code = Arial Narrow 11 pt, Table-explanation = 10 pt, Appendices-heading =
+  #   22 pt capitals, Formulas = equation lines, Appendix-number/-name = right-
+  #   aligned / centred appendix titles, WorkTaskPage = the assessment sheet.
+  non_body_styles: [Code, Table-explanation, Appendices-heading, Formulas, Appendix-number, Appendix-name, WorkTaskPage]
 
 structure:
-  # In order (rtu-template-2024). `heading` = the text of its heading (any case).
-  required_sections:
-    - {id: title_page, heading: null}
-    - {id: assessment_sheet, heading: null, starts_with: "Work Performance and Assessment Sheet"}
-    - {id: abstract, heading: ABSTRACT}
-    - {id: anotacija, heading: ANOTĀCIJA}
-    - {id: toc, heading: TABLE OF CONTENTS}
-    - {id: introduction, heading: INTRODUCTION}
-    - {id: chapters, heading: null}
-    - {id: conclusions, heading: RESULTS AND CONCLUSIONS}
-    - {id: references, heading: LIST OF REFERENCES}
-  optional_sections:
-    - {id: appendixes, heading: APPENDIXES, after: references}
-  word_limits: TODO
-  literature_review_headings: TODO
+  # How each part is recognised: its heading text (any capitalisation).
+  # English headings are from rtu-template-2024. Latvian ones are (assumed) —
+  # please confirm the exact Latvian wording.
+  sections:
+    assessment_sheet: {label: "Work Performance and Assessment Sheet", starts_with: ["Work Performance and Assessment Sheet", "Darba izpildes un novērtējuma lapa"]}
+    abstract: {label: ABSTRACT, headings: [ABSTRACT]}
+    anotacija: {label: ANOTĀCIJA, headings: [ANOTĀCIJA]}
+    toc: {label: TABLE OF CONTENTS, headings: [TABLE OF CONTENTS, SATURS]}
+    introduction: {label: INTRODUCTION, headings: [INTRODUCTION, IEVADS]}
+    conclusions: {label: RESULTS AND CONCLUSIONS, headings: [RESULTS AND CONCLUSIONS, REZULTĀTI UN SECINĀJUMI, SECINĀJUMI]}
+    references: {label: LIST OF REFERENCES, headings: [LIST OF REFERENCES, IZMANTOTĀS INFORMĀCIJAS AVOTI, INFORMĀCIJAS AVOTU SARAKSTS]}
+    appendixes: {label: APPENDIXES, headings: [APPENDIXES, APPENDICES, PIELIKUMI]}
+  # In order (rtu-template-2024).
+  required_order: [title_page, assessment_sheet, abstract, anotacija, toc, introduction, chapters, conclusions, references]
+  optional: [{name: appendixes, after: references}]
+  keyword_labels: [TODO]            # how key words are introduced, e.g. "Key words:"
+  literature_review_headings: TODO  # which chapters are literature reviews (CITE-05)
 
 captions:
   figure: {label: "Fig.", pattern: "Fig. {chapter}.{n}. {title}", per_chapter: true, position: below, align: center, bold: true, style: Figure-name}
   table: {label: "Table", pattern: "Table {chapter}.{n}", per_chapter: true, position: above, align: right, bold: true, style: Table-number, name_style: Table-name}
-  formula: {pattern: "({chapter}.{n}.)", align: right, style: Formulas}
+  # Formulas are numbered "(2.1.)" at the right (style Formulas); not checked yet.
 
 title_page:
-  fields: [university, faculty, institute, student_name, study_programme, student_id, title, work_type, adviser, city_year]
+  # Fields from rtu-template-2024. `patterns` are how ThesisCheck recognises each
+  # field (regular expressions, any capitalisation). Latvian wordings are (assumed).
+  fields:
+    - {id: university, label: "RIGA TECHNICAL UNIVERSITY", patterns: ['riga technical university', 'rīgas tehniskā universitāte']}
+    - {id: faculty, label: "Faculty", patterns: ['faculty', 'fakultāte']}
+    - {id: institute, label: "Institute", patterns: ['institute', 'institūts']}
+    - {id: student_name, label: "Student's name and surname"}
+    - {id: study_programme, label: "Study programme", patterns: ['study program', 'studiju programm']}
+    - {id: student_id, label: "Student ID number", patterns: ['student id', 'apliecības nr', 'stud\. ?apl']}
+    - {id: title, label: "Thesis title"}
+    - {id: work_type, label: "Type of work (bachelor thesis, …)", patterns: ['bachelor thesis', 'master thesis', 'diploma project', 'qualification paper', 'bakalaura darbs', 'maģistra darbs', 'diplomprojekts', 'kvalifikācijas darbs']}
+    - {id: adviser, label: "Scientific adviser", patterns: ['scientific adviser', 'supervisor', 'zinātniskais vadītājs', 'vadītājs']}
+    - {id: city_year, label: "RIGA <year>", patterns: ['riga\s+\d{4}', 'rīga\s+\d{4}']}
 
 ai_disclosure:
   heading_phrases:

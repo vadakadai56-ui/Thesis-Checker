@@ -1,4 +1,4 @@
-"""Safe opening of files (docx_io). Stage 2 adds the full test_security.py suite."""
+"""Security: hostile and broken files are refused safely (docx_io, BUILD_PROMPT §10)."""
 
 from __future__ import annotations
 
@@ -101,3 +101,53 @@ def test_input_bytes_unchanged_and_hashed(demo_profile):
     before = hashlib.sha256(data).hexdigest()
     report = run(data, demo_profile)
     assert hashlib.sha256(data).hexdigest() == before == report["document_sha256"]
+
+
+# ---- more hostile inputs (BUILD_PROMPT §10, §15) ------------------------------
+
+
+def test_billion_laughs_rejected():
+    lol = (
+        b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol">'
+        b'<!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">]>'
+        b"<w:document>&lol2;</w:document>"
+    )
+    entries = _docx_entries() | {"word/document.xml": lol}
+    assert _code(_zip(entries)) == "CORRUPT"
+
+
+def test_doctype_in_styles_and_rels_rejected():
+    xxe = b'<!DOCTYPE x [<!ENTITY e SYSTEM "http://example.invalid/">]><x>&e;</x>'
+    for part in ("word/styles.xml", "word/_rels/document.xml.rels"):
+        assert _code(_zip(_docx_entries() | {part: xxe})) == "CORRUPT", part
+
+
+def test_lowercase_doctype_rejected():
+    entries = _docx_entries() | {"word/styles.xml": b"<!doctype x><x/>"}
+    assert _code(_zip(entries)) == "CORRUPT"
+
+
+@pytest.mark.parametrize("name", ["/etc/evil.xml", "C:/evil.xml", "word\\..\\..\\evil.xml"])
+def test_absolute_and_backslash_paths(name):
+    assert _code(_zip(_docx_entries() | {name: b"x"})) == "CORRUPT"
+
+
+def test_macro_content_type_rejected():
+    entries = _docx_entries()
+    entries["[Content_Types].xml"] = entries["[Content_Types].xml"].replace(
+        b"document.main+xml", b"document.macroEnabled.main+xml"
+    )
+    assert _code(_zip(entries)) == "MACRO_DOCM"
+
+
+def test_too_large_input_rejected_before_unzipping(monkeypatch):
+    from thesischeck import docx_io
+
+    monkeypatch.setattr(docx_io, "MAX_COMPRESSED_BYTES", 1000)
+    assert _code(sample_bytes("clean")) == "FILE_TOO_LARGE"
+
+
+def test_external_entity_never_fetched(demo_profile):
+    """Even inside a valid-looking part, entities are never expanded by our parser."""
+    with pytest.raises(EngineError):
+        safe_parse(b'<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/hostname">]><x>&e;</x>')

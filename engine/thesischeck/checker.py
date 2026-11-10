@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from .document_view import DocumentView
 from .model import Finding, Profile, SkippedRule
+from .regions import Regions
 from .rule_ids import ALL_RULE_IDS
 from .rules import RuleContext, SkipRule, get_rule
 
@@ -11,8 +14,12 @@ REASON_PENDING = "Not checked yet: waiting for the faculty formatting guideline.
 REASON_NOT_IMPLEMENTED = "Not checked yet: this rule is not implemented in this version."
 
 
-def run_checks(view: DocumentView, profile: Profile) -> tuple[list[Finding], list[SkippedRule]]:
+def run_checks(
+    view: DocumentView, profile: Profile, today: date | None = None
+) -> tuple[list[Finding], list[SkippedRule]]:
     findings: list[Finding] = []
+    regions = Regions(view, profile.extra.get("structure"))
+    today = today or date.today()
     skipped: list[SkippedRule] = []
 
     # Go through rules in the fixed §5 order so reports are always in the same order.
@@ -28,7 +35,9 @@ def run_checks(view: DocumentView, profile: Profile) -> tuple[list[Finding], lis
             skipped.append(SkippedRule(rule_id, REASON_NOT_IMPLEMENTED))
             continue
 
-        ctx = RuleContext(view=view, cfg=cfg, spec=spec)
+        ctx = RuleContext(
+            view=view, cfg=cfg, spec=spec, regions=regions, profile=profile, today=today
+        )
         try:
             spec.check(ctx)
         except SkipRule as skip:

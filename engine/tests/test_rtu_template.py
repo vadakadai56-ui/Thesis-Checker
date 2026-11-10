@@ -34,9 +34,31 @@ def template_as_docx() -> bytes:
     return out.getvalue()
 
 
-def test_template_passes_the_rtu_profile(rtu_profile):
+# What the untouched official template is EXPECTED to get. Anything else is a bug
+# in ThesisCheck (or a profile value that doesn't match the template).
+KNOWN_TEMPLATE_FINDINGS = [
+    # The "where Qg – …" lines under the example formula have no first-line indent
+    # (style Normal, not Text). Asked the owner whether to treat them as exceptions.
+    ("TEXT-06", "where Qg – volume of material required p"),
+    ("TEXT-06", "q – material consumption rate, kg/pcs;"),
+    ("TEXT-06", "Ng – annual production volume, pcs."),
+    # The template's last section (references + appendixes) has an empty footer,
+    # so those pages have no page numbers. Asked the owner if that is intended.
+    ("PGNUM-02", "list of references"),
+    # The template has no "Tools used in writing this thesis" paragraph (info).
+    ("STRUCT-05", "introduction"),
+    # The title page still has "<…>" placeholders and no real year — correct for
+    # an unfilled template.
+    ("TITLE-01", "RIGA TECHNICAL UNIVERSITY"),  # missing "RIGA <year>"
+    ("TITLE-01", "RIGA TECHNICAL UNIVERSITY"),  # placeholders left in
+]
+
+
+def test_template_gets_only_the_known_findings(rtu_profile):
     report = run(template_as_docx(), rtu_profile)
-    assert rule_ids(report) == []
+    found = sorted((f["rule_id"], f["location"]["snippet"][:40]) for f in report["findings"])
+    assert found == sorted(KNOWN_TEMPLATE_FINDINGS)
+    assert report["score"]["capped"] is True  # placeholders = a blocking title-page problem
 
 
 def test_profile_values_match_template_styles(rtu_profile):

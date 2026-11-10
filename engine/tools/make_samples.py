@@ -2,27 +2,38 @@
 
     python tools/make_samples.py            (run from engine/)
 
-* clean.docx    – a short, SYNTHETIC demo thesis that follows the DEMO profile.
+* clean.docx     – a short, SYNTHETIC demo thesis that follows the DEMO profile
+                   (engine/profiles/demo.yaml) in every rule.
 * <RULE-ID>.docx – the same document with exactly ONE rule broken.
 
-The text is invented ("Demo Student", a made-up topic) — never a real thesis.
+The text is invented ("Demo Student", made-up sources) — never a real thesis.
 Output is byte-for-byte reproducible (fixed timestamps), so a test can verify the
 committed samples are up to date.
+
+How it works: a document is described as a list of "blocks" (title-page line,
+heading, paragraph, figure, table, reference, …). Each bad sample changes the
+block list and/or the finished document in one small way.
 """
 
 from __future__ import annotations
 
 import io
+import struct
 import sys
 import zipfile
+import zlib
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
 import docx
-from docx.enum.section import WD_ORIENT
+from docx.enum.section import WD_ORIENT, WD_SECTION
+from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt
+from docx.shared import Cm, Pt, RGBColor
 
 ENGINE_DIR = Path(__file__).resolve().parents[1]
 SAMPLES_DIR = ENGINE_DIR / "tests" / "samples"
@@ -33,89 +44,277 @@ DEMO_MARGINS_CM = {"top": 2.0, "bottom": 2.0, "left": 3.0, "right": 2.0}
 DEMO_FONT = "Times New Roman"
 DEMO_SIZE_PT = 12
 
-BODY = [
-    "Small software teams often decide how to test their code without measuring "
-    "the effect of that decision (Example, 2024). This demo thesis describes a "
-    "made-up study used only to test the ThesisCheck engine.",
-    "The aim of the work is to compare two imaginary testing approaches and to "
-    "describe the results in a clear and repeatable way.",
-]
-THEORY = [
-    "Earlier imaginary studies describe unit tests, integration tests and manual "
-    "review as complementary activities (Sample and Person, 2023).",
-    "Each approach finds a different kind of defect, so teams usually combine "
-    "them instead of choosing only one.",
-]
-METHOD = [
-    "The study uses invented data from twelve fictional projects. Every project "
-    "is described by its size, its number of tests and its number of defects.",
-]
-CONCLUSIONS = [
-    "The invented results suggest that combining approaches works best. Because "
-    "the data is made up, no real conclusion can be drawn from this document.",
-]
-REFERENCES = [
-    "Example, A. (2024). An invented article about software testing. Demo Journal, 1(1), 1–10.",
-    "Sample, B. and Person, C. (2023). A made-up book on code review. Demo Press.",
-]
+Block = tuple  # (kind, *payload)
 
-# Each block is (kind, text). kind = "title", "line", "h1".."h3", "p".
-Blocks = list[tuple[str, str]]
+INTRO_TOOLS = (
+    "Tools used in writing this thesis: no artificial intelligence (AI) tools were "
+    "used; the text was checked only with the spell-checker of the word processor."
+)
 
 
-def clean_blocks() -> Blocks:
-    blocks: Blocks = [
+def clean_blocks() -> list[Block]:
+    """The clean demo thesis, block by block."""
+    return [
         ("title", "Measuring Testing Practices in Small Teams"),
+        ("line", "DEMO UNIVERSITY"),
         ("line", "Demo Student"),
         ("line", "Bachelor thesis (synthetic sample)"),
+        ("line", "Supervisor: Dr. Demo Adviser"),
         ("line", "Demo City 2026"),
+        ("title_end",),
+        ("hu", "Abstract"),
+        ("p", "This synthetic thesis compares two imaginary testing approaches in small "
+              "software teams. It exists only to test the ThesisCheck engine."),
+        ("p", "Keywords: software testing, code review, small teams"),
+        ("hu", "Contents"),
+        ("toc",),
         ("h1", "Introduction"),
-        *[("p", t) for t in BODY],
-        ("h1", "1 Theory"),
-        *[("p", t) for t in THEORY],
-        ("h2", "1.1 Research method"),
-        *[("p", t) for t in METHOD],
-        ("h3", "1.1.1 Data set"),
-        ("p", METHOD[0]),
+        ("p", "Small software teams often decide how to test their code without measuring "
+              "the effect of that decision (Example, 2024)."),
+        ("p", "The aim of the work is to compare two imaginary testing approaches and to "
+              "describe the results in a clear and repeatable way."),
+        ("p", INTRO_TOOLS),
+        ("h1", "1. Theory"),
+        ("p", "Earlier imaginary studies describe unit tests, integration tests and manual "
+              "review as complementary activities (Sample and Person, 2023)."),
+        ("p", "Teams that use continuous integration (CI) run their tests on every change. "
+              "With CI, defects are found soon after they appear, which makes the behavior "
+              "of the code easier to follow."),
+        ("figure", "Fig. 1.1. Imaginary share of defects found by each approach"),
+        ("p", "Fig. 1.1 shows the imaginary share of defects found by each approach."),
+        ("h2", "1.1. Research method"),
+        ("p", "The study uses invented data from twelve fictional projects. Every project "
+              "is described by its size, its number of tests and its number of defects."),
+        ("h3", "1.1.1. Data set"),
+        ("p", "The data set was generated by hand. As one invented source puts it, "
+              "“small teams test what they fear most and review what they understand "
+              "least” (Example, 2024, p. 5)."),
+        ("h1", "2. Results"),
+        ("table", "Table 2.1. Invented defect counts"),
+        ("p", "Table 2.1 lists the invented defect counts for both approaches."),
+        ("p", "Online guidance for small teams is summarized in a separate guide "
+              "(Demo Org, 2025)."),
         ("h1", "Conclusions"),
-        *[("p", t) for t in CONCLUSIONS],
-        ("h1", "References"),
-        *[("p", t) for t in REFERENCES],
-    ]
-    return blocks
+        ("p", "The invented results suggest that combining approaches works best. Because "
+              "the data is made up, no real conclusion can be drawn from this document."),
+        ("hu", "References"),
+        ("ref", "Demo Org. (2025). Testing guide for small teams. Available at: "
+                "https://example.org/guide [accessed 01.10.2026.]"),
+        ("ref", "Example, A. (2024). An invented article about software testing. "
+                "Demo Journal, 1(1), 1–10."),
+        ("ref", "Sample, B. and Person, C. (2023). A made-up book on code review. Demo Press."),
+    ]  # fmt: skip
 
 
-def _set_style_font(style, name: str, size_pt: float) -> None:
+# ----------------------------------------------------------------- tiny helpers
+
+
+def _png() -> bytes:
+    """A valid 1×1 white PNG, so the sample needs no image file."""
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        crc = zlib.crc32(kind + data) & 0xFFFFFFFF
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", crc)
+
+    header = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    pixels = zlib.compress(b"\x00\xff\xff\xff")
+    return (
+        b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", pixels) + chunk(b"IEND", b"")
+    )
+
+
+def _set_style_font(style, name: str | None, size_pt: float | None) -> None:
     """Set a style's font and remove theme-font links, so the font name really applies."""
-    style.font.name = name
-    style.font.size = Pt(size_pt)
-    rfonts = style.element.get_or_add_rPr().find(qn("w:rFonts"))
-    for attr in ("w:asciiTheme", "w:hAnsiTheme"):
-        if rfonts is not None and rfonts.get(qn(attr)) is not None:
-            del rfonts.attrib[qn(attr)]
+    if name:
+        style.font.name = name
+        rfonts = style.element.get_or_add_rPr().find(qn("w:rFonts"))
+        for attr in ("w:asciiTheme", "w:hAnsiTheme"):
+            if rfonts is not None and rfonts.get(qn(attr)) is not None:
+                del rfonts.attrib[qn(attr)]
+    if size_pt:
+        style.font.size = Pt(size_pt)
 
 
-def build_document(blocks: Blocks, *, normal_font: str | None = DEMO_FONT) -> docx.Document:
-    doc = docx.Document()
-    if normal_font is not None:
-        _set_style_font(doc.styles["Normal"], normal_font, DEMO_SIZE_PT)
+def _field_runs(paragraph, instruction: str, result: str = "", *, begin=True, end=True) -> None:
+    """Add a Word field ({ PAGE }, { TOC … }) to a paragraph as fldChar runs."""
 
+    def fld(kind: str) -> None:
+        el = OxmlElement("w:fldChar")
+        el.set(qn("w:fldCharType"), kind)
+        paragraph.add_run()._r.append(el)
+
+    if begin:
+        fld("begin")
+        instr = OxmlElement("w:instrText")
+        instr.set(qn("xml:space"), "preserve")
+        instr.text = f" {instruction} "
+        paragraph.add_run()._r.append(instr)
+        fld("separate")
+    if result:
+        paragraph.add_run(result)
+    if end:
+        fld("end")
+
+
+def _style(doc, name: str, base: str, **kw):
+    style = doc.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+    style.base_style = doc.styles[base]
+    for key, value in kw.items():
+        setattr(style.paragraph_format, key, value)
+    return style
+
+
+def _setup_styles(doc, normal_font: str | None) -> None:
+    normal = doc.styles["Normal"]
+    _set_style_font(normal, normal_font, DEMO_SIZE_PT)
+    fmt = normal.paragraph_format
+    fmt.line_spacing = 1.5
+    fmt.space_before = fmt.space_after = Pt(0)
+    fmt.first_line_indent = Cm(1.25)
+    fmt.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    for level, size, align in ((1, 16, WD_ALIGN_PARAGRAPH.CENTER), (2, 14, WD_ALIGN_PARAGRAPH.LEFT), (3, 12, WD_ALIGN_PARAGRAPH.LEFT)):  # fmt: skip
+        style = doc.styles[f"Heading {level}"]
+        _set_style_font(style, DEMO_FONT, size)
+        style.font.bold = True
+        style.font.color.rgb = RGBColor(0, 0, 0)
+        style.paragraph_format.alignment = align
+        style.paragraph_format.first_line_indent = Cm(0)
+    h1 = doc.styles["Heading 1"]
+    h1.font.all_caps = True
+    h1.paragraph_format.page_break_before = True
+    # Front/back-matter headings: like Heading 1 but not in the contents (like RTU's
+    # "Heading-excluded-from-table-of-contents").
+    _style(doc, "Heading Unnumbered", "Heading 1")
+
+    caption = doc.styles["Caption"]
+    _set_style_font(caption, DEMO_FONT, DEMO_SIZE_PT)
+    caption.font.bold = True
+    caption.font.italic = False
+    caption.font.color.rgb = RGBColor(0, 0, 0)
+    caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption.paragraph_format.first_line_indent = Cm(0)
+
+    for level in (1, 2, 3):
+        _style(doc, f"toc {level}", "Normal", first_line_indent=Cm(0), left_indent=Cm(0.5 * (level - 1)), alignment=WD_ALIGN_PARAGRAPH.LEFT)  # fmt: skip
+    _style(doc, "table of figures", "Normal", first_line_indent=Cm(0), alignment=WD_ALIGN_PARAGRAPH.LEFT)  # fmt: skip
+    _style(doc, "Reference Entry", "Normal", left_indent=Cm(1), first_line_indent=Cm(-1))
+    bold_body = _style(doc, "Bold Body", "Normal")
+    bold_body.font.bold = True
+
+
+def _setup_title_section(doc, title_page_number: bool) -> None:
     section = doc.sections[0]
     section.page_width, section.page_height = Cm(21), Cm(29.7)  # A4
     section.top_margin = Cm(DEMO_MARGINS_CM["top"])
     section.bottom_margin = Cm(DEMO_MARGINS_CM["bottom"])
     section.left_margin = Cm(DEMO_MARGINS_CM["left"])
     section.right_margin = Cm(DEMO_MARGINS_CM["right"])
+    section.gutter = Cm(0)
+    section.different_first_page_header_footer = not title_page_number
+    footer = section.footer.paragraphs[0]
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _field_runs(footer, "PAGE", "1")
 
-    for kind, text in blocks:
+
+def _toc_entries(blocks: list[Block], start: int) -> list[tuple[str, int]]:
+    """(text, level) of headings after the contents that the TOC field includes."""
+    levels = {"h1": 1, "h2": 2, "h3": 3}
+    return [(b[1], levels[b[0]]) for b in blocks[start:] if b[0] in levels]
+
+
+def _add_toc(
+    doc, entries: list[tuple[str, int]], pages: list[int], instruction: str, style=None
+) -> None:
+    for i, ((text, level), page) in enumerate(zip(entries, pages, strict=True)):
+        p = doc.add_paragraph(style=style or f"toc {level}")
+        _field_runs(p, instruction, begin=i == 0, end=False)
+        p.add_run(f"{text}\t{page}")
+        if i == len(entries) - 1:
+            _field_runs(p, instruction, begin=False, end=True)
+
+
+def _add_table(doc) -> None:
+    table = doc.add_table(rows=3, cols=2)
+    table.style = doc.styles["Table Grid"]
+    for row, values in zip(table.rows, (("Approach", "Defects"), ("Tests", "14"), ("Review", "9")), strict=True):  # fmt: skip
+        for cell, value in zip(row.cells, values, strict=True):
+            cell.paragraphs[0].text = value
+
+
+def build_document(
+    blocks: list[Block],
+    *,
+    normal_font: str | None = DEMO_FONT,
+    toc_pages: list[int] | None = None,
+    title_page_number: bool = False,
+) -> docx.Document:
+    doc = docx.Document()
+    _setup_styles(doc, normal_font)
+    _setup_title_section(doc, title_page_number)
+
+    for i, block in enumerate(blocks):
+        kind = block[0]
         if kind == "title":
-            doc.add_paragraph(text, style="Title")
+            doc.add_paragraph(block[1], style="Title")
         elif kind == "line":
-            doc.add_paragraph(text)
-        elif kind.startswith("h"):
-            doc.add_heading(text, level=int(kind[1]))
+            doc.add_paragraph(block[1])
+        elif kind == "title_end":
+            new = doc.add_section(WD_SECTION.NEW_PAGE)
+            new.different_first_page_header_footer = False
+            pg_num = OxmlElement("w:pgNumType")
+            pg_num.set(qn("w:start"), "1")
+            new._sectPr.append(pg_num)
+        elif kind in ("h1", "h2", "h3"):
+            doc.add_paragraph(block[1], style=f"Heading {kind[1]}")
+        elif kind == "hu":
+            doc.add_paragraph(block[1], style="Heading Unnumbered")
+        elif kind == "p":
+            doc.add_paragraph(block[1])
+        elif kind == "boldline":
+            doc.add_paragraph(block[1], style="Bold Body")
+        elif kind == "empty":
+            doc.add_paragraph()
+        elif kind == "toc":
+            entries = _toc_entries(blocks, i + 1)
+            pages = toc_pages or list(range(3, 3 + len(entries)))
+            _add_toc(doc, entries, pages, 'TOC \\o "2-3" \\h \\z \\t "Heading 1,1"')
+        elif kind == "typed_toc":
+            for text, level in _toc_entries(blocks, i + 1):
+                doc.add_paragraph(f"{text}\t3", style=f"toc {level}")
+        elif kind == "figure_list":
+            _add_toc(
+                doc, [(block[1], 1)], [5], 'TOC \\h \\z \\c "Figure"', style="table of figures"
+            )
+        elif kind in ("figure", "figure_above"):
+            if kind == "figure_above":
+                doc.add_paragraph(block[1], style="Caption")
+            image = doc.add_paragraph()
+            image.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            image.paragraph_format.first_line_indent = Cm(0)
+            image.add_run().add_picture(io.BytesIO(_png()), width=Cm(4))
+            if kind == "figure":
+                doc.add_paragraph(block[1], style="Caption")
+        elif kind in ("table", "table_below"):
+            if kind == "table":
+                doc.add_paragraph(block[1], style="Caption")
+            _add_table(doc)
+            if kind == "table_below":
+                doc.add_paragraph(block[1], style="Caption")
+        elif kind == "ref":
+            doc.add_paragraph(block[1], style="Reference Entry")
+        elif kind in ("landscape", "portrait"):
+            new = doc.add_section(WD_SECTION.NEW_PAGE)
+            new.orientation = WD_ORIENT.LANDSCAPE if kind == "landscape" else WD_ORIENT.PORTRAIT
+            new.page_width, new.page_height = (Cm(29.7), Cm(21)) if kind == "landscape" else (Cm(21), Cm(29.7))  # fmt: skip
+            if kind == "landscape":  # margins turned with the page (clockwise)
+                new.top_margin, new.right_margin = Cm(3.0), Cm(2.0)
+                new.bottom_margin, new.left_margin = Cm(2.0), Cm(2.0)
+            else:
+                new.top_margin, new.bottom_margin = Cm(2.0), Cm(2.0)
+                new.left_margin, new.right_margin = Cm(3.0), Cm(2.0)
         else:
-            doc.add_paragraph(text)
+            raise ValueError(f"unknown block kind {kind!r}")
 
     props = doc.core_properties
     props.author = "ThesisCheck sample generator"
@@ -143,73 +342,351 @@ def to_bytes(doc: docx.Document) -> bytes:
     return out.getvalue()
 
 
-# --------------------------------------------------------- one broken rule each
+# ---------------------------------------------------------- block-list helpers
 
 
-def _body_paragraph(doc: docx.Document, starts_with: str):
-    return next(p for p in doc.paragraphs if p.text.startswith(starts_with))
+def _replace(blocks: list[Block], old: Block, *new: Block) -> list[Block]:
+    i = blocks.index(old)
+    return blocks[:i] + list(new) + blocks[i + 1 :]
 
 
-def make_clean() -> docx.Document:
-    return build_document(clean_blocks())
+def _insert_after(blocks: list[Block], anchor: Block, *new: Block) -> list[Block]:
+    i = blocks.index(anchor)
+    return blocks[: i + 1] + list(new) + blocks[i + 1 :]
 
 
-def make_page_01() -> docx.Document:
-    doc = make_clean()
-    doc.sections[0].left_margin = Cm(2.5)  # demo wants 3.0 cm
-    return doc
+def _find(blocks: list[Block], kind: str, starts: str) -> Block:
+    return next(b for b in blocks if b[0] == kind and b[1].startswith(starts))
 
 
-def make_page_02() -> docx.Document:
-    doc = make_clean()
-    section = doc.sections[0]
-    section.page_width, section.page_height = Cm(21.59), Cm(27.94)  # US Letter
-    return doc
+def _edit_text(blocks: list[Block], kind: str, starts: str, old: str, new: str) -> list[Block]:
+    block = _find(blocks, kind, starts)
+    assert old in block[1], (old, block)
+    return _replace(blocks, block, (kind, block[1].replace(old, new)))
 
 
-def make_text_01() -> docx.Document:
-    doc = make_clean()
-    para = _body_paragraph(doc, "The aim of the work")
-    para.add_run(" Extra sentence typed in another font.").font.name = "Arial"
-    return doc
+def _para(doc, starts: str):
+    return next(p for p in doc.paragraphs if p.text.startswith(starts))
 
 
-def make_text_02() -> docx.Document:
-    doc = make_clean()
-    para = _body_paragraph(doc, "The aim of the work")
-    para.add_run(" Extra sentence in a bigger size.").font.size = Pt(14)
-    return doc
+def _heading(doc, starts: str):
+    """The heading itself (not its line in the table of contents)."""
+    return next(
+        p
+        for p in doc.paragraphs
+        if p.text.startswith(starts) and p.style.name.startswith("Heading")
+    )
 
 
-def make_head_03() -> docx.Document:
-    blocks = [("h3", t) if t == "1.1 Research method" else (k, t) for k, t in clean_blocks()]
-    return build_document(blocks)
+# ------------------------------------------------- one broken rule per sample
+#
+# Each entry: rule ID -> function returning the finished python-docx Document.
+
+
+def _doc(blocks: list[Block] | None = None, **kw) -> docx.Document:
+    return build_document(blocks if blocks is not None else clean_blocks(), **kw)
+
+
+def _with(fn: Callable[[docx.Document], None], blocks: list[Block] | None = None, **kw):
+    def make() -> docx.Document:
+        doc = _doc(blocks, **kw)
+        fn(doc)
+        return doc
+
+    return make
+
+
+def _blocks(fn: Callable[[list[Block]], list[Block]], **kw):
+    return lambda: _doc(fn(clean_blocks()), **kw)
+
+
+AIM = "The aim of the work"
+LONG_SENTENCE = "The invented teams described their testing habits in many different ways. "
+
+
+def _main_section(doc):
+    return doc.sections[1]
+
+
+def _set_page_letter(doc) -> None:
+    _main_section(doc).page_width, _main_section(doc).page_height = Cm(21.59), Cm(27.94)
+
+
+def _remove_footer_field(doc) -> None:
+    footer = doc.sections[0].footer.paragraphs[0]
+    for run in list(footer.runs):
+        run._r.getparent().remove(run._r)
+
+
+def _with_ref(blocks: list[Block], entry: str, cite: str, after_ref: str) -> list[Block]:
+    blocks = _insert_after(blocks, _find(blocks, "ref", after_ref), ("ref", entry))
+    return _edit_text(
+        blocks, "p", "Online guidance", "(Demo Org, 2025).", f"(Demo Org, 2025; {cite})."
+    )
+
+
+def _abstract_after_contents(blocks: list[Block]) -> list[Block]:
+    """STRUCT-02: move the Abstract (heading + 2 paragraphs) after the Contents."""
+    abstract = [
+        ("hu", "Abstract"),
+        _find(blocks, "p", "This synthetic"),
+        _find(blocks, "p", "Keywords"),
+    ]
+    rest = [b for b in blocks if b not in abstract]
+    return _insert_after(rest, ("toc",), *abstract)
 
 
 SAMPLES: dict[str, Callable[[], docx.Document]] = {
-    "clean": make_clean,
-    "PAGE-01": make_page_01,
-    "PAGE-02": make_page_02,
-    "TEXT-01": make_text_01,
-    "TEXT-02": make_text_02,
-    "HEAD-03": make_head_03,
+    "clean": _doc,
+    # --- page setup
+    "PAGE-01": _with(lambda d: setattr(_main_section(d), "left_margin", Cm(2.5))),
+    "PAGE-02": _with(_set_page_letter),
+    "PAGE-03": _blocks(
+        lambda b: _insert_after(
+            _replace(
+                b, _find(b, "table", "Table 2.1"), ("landscape",), _find(b, "table", "Table 2.1")
+            ),
+            _find(b, "p", "Table 2.1 lists"),
+            ("portrait",),
+        )
+    ),
+    "PAGE-04": _with(lambda d: setattr(_main_section(d), "gutter", Cm(1))),
+    # --- text
+    "TEXT-01": _with(
+        lambda d: setattr(
+            _para(d, AIM).add_run(" Extra sentence typed in another font.").font, "name", "Arial"
+        )
+    ),
+    "TEXT-02": _with(
+        lambda d: setattr(
+            _para(d, AIM).add_run(" Extra sentence in a bigger size.").font, "size", Pt(14)
+        )
+    ),
+    "TEXT-03": _with(lambda d: setattr(_para(d, AIM).paragraph_format, "line_spacing", 1.0)),
+    "TEXT-04": _with(
+        lambda d: setattr(_para(d, AIM).paragraph_format, "alignment", WD_ALIGN_PARAGRAPH.LEFT)
+    ),
+    "TEXT-05": _with(lambda d: setattr(_para(d, AIM).paragraph_format, "space_after", Pt(12))),
+    "TEXT-06": _with(lambda d: setattr(_para(d, AIM).paragraph_format, "first_line_indent", Cm(0))),
+    "TEXT-07": _with(
+        lambda d: [setattr(r.font.color, "rgb", RGBColor(0xC0, 0, 0)) for r in _para(d, AIM).runs]
+    ),
+    "TEXT-08": _blocks(lambda b: _insert_after(b, _find(b, "p", AIM), ("empty",), ("empty",))),
+    # --- headings
+    "HEAD-01": _blocks(
+        lambda b: _insert_after(
+            b,
+            _find(b, "p", "Earlier imaginary"),
+            ("boldline", "Practical observations"),
+            ("p", "The imaginary teams kept short notes about every test run."),
+        )
+    ),
+    "HEAD-02": _with(
+        lambda d: [setattr(r.font, "size", Pt(20)) for r in _heading(d, "1.1. Research").runs]
+    ),
+    "HEAD-03": _blocks(
+        lambda b: [
+            x for x in b if x not in (_find(b, "h2", "1.1."), _find(b, "p", "The study uses"))
+        ]
+    ),
+    "HEAD-04": _blocks(lambda b: _replace(b, ("h1", "1. Theory"), ("h1", "1 Theory"))),
+    "HEAD-05": _with(
+        lambda d: [setattr(r.font, "all_caps", False) for r in _heading(d, "Conclusions").runs]
+    ),
+    "HEAD-06": _with(
+        lambda d: setattr(_heading(d, "2. Results").paragraph_format, "page_break_before", False)
+    ),
+    # --- page numbers
+    "PGNUM-01": _with(_remove_footer_field),
+    "PGNUM-02": _with(
+        lambda d: setattr(d.sections[0].footer.paragraphs[0], "alignment", WD_ALIGN_PARAGRAPH.RIGHT)
+    ),
+    "PGNUM-03": lambda: _doc(title_page_number=True),
+    # --- structure
+    "STRUCT-01": _blocks(
+        lambda b: [
+            x
+            for x in b
+            if x
+            not in (("hu", "Abstract"), _find(b, "p", "This synthetic"), _find(b, "p", "Keywords"))
+        ]
+    ),
+    "STRUCT-02": _blocks(lambda b: _abstract_after_contents(b)),
+    "STRUCT-03": _blocks(
+        lambda b: _edit_text(
+            b,
+            "p",
+            "Keywords",
+            "small teams",
+            "small teams, quality, defects, projects, review culture",
+        )
+    ),
+    "STRUCT-04": _blocks(lambda b: _insert_after(b, _find(b, "p", AIM), ("p", LONG_SENTENCE * 80))),
+    "STRUCT-05": _blocks(lambda b: [x for x in b if x != ("p", INTRO_TOOLS)]),
+    # --- contents
+    "TOC-01": _blocks(lambda b: _replace(b, ("toc",), ("typed_toc",))),
+    "TOC-02": _blocks(lambda b: b),  # entries edited below (see _toc_mismatch)
+    "TOC-03": lambda: _doc(toc_pages=[3, 4, 9, 5, 6, 7]),
+    # --- figures and tables
+    "FIG-01": _blocks(
+        lambda b: _replace(
+            b,
+            _find(b, "figure", "Fig."),
+            ("figure", "Figure 1.1. Imaginary share of defects found by each approach"),
+        )
+    ),
+    "FIG-02": _blocks(
+        lambda b: _edit_text(
+            _replace(
+                b,
+                _find(b, "figure", "Fig."),
+                ("figure", "Fig. 1.2. Imaginary share of defects found by each approach"),
+            ),
+            "p",
+            "Fig. 1.1 shows",
+            "1.1",
+            "1.2",
+        )
+    ),
+    "FIG-03": _blocks(
+        lambda b: _replace(
+            b, _find(b, "figure", "Fig."), ("figure_above", _find(b, "figure", "Fig.")[1])
+        )
+    ),
+    "FIG-04": _blocks(
+        lambda b: _edit_text(b, "p", "Fig. 1.1 shows", "Fig. 1.1 shows", "The chart shows")
+    ),
+    "TAB-01": _blocks(
+        lambda b: _replace(
+            b, _find(b, "table", "Table"), ("table", "Tab. 2.1. Invented defect counts")
+        )
+    ),
+    "TAB-02": _blocks(
+        lambda b: _edit_text(
+            _replace(b, _find(b, "table", "Table"), ("table", "Table 2.2. Invented defect counts")),
+            "p",
+            "Table 2.1 lists",
+            "2.1",
+            "2.2",
+        )
+    ),
+    "TAB-03": _blocks(
+        lambda b: _replace(
+            b, _find(b, "table", "Table"), ("table_below", _find(b, "table", "Table")[1])
+        )
+    ),
+    "TAB-04": _blocks(
+        lambda b: _edit_text(b, "p", "Table 2.1 lists", "Table 2.1 lists", "The next part lists")
+    ),
+    "LIST-01": _blocks(
+        lambda b: _insert_after(
+            b, ("toc",), ("figure_list", "Fig. 1.1. A caption that does not exist")
+        )
+    ),
+    # --- citations and references
+    "CITE-01": _blocks(
+        lambda b: _edit_text(b, "p", AIM, "repeatable way.", "repeatable way (Unknown, 2020).")
+    ),
+    "CITE-02": _blocks(
+        lambda b: (
+            [*b, ("ref", "Zeta, D. (2022). An uncited invented paper. Demo Journal, 2(1), 5–9.")]
+        )
+    ),
+    "CITE-03": _blocks(
+        lambda b: _edit_text(
+            b, "p", "Earlier imaginary", "(Sample and Person, 2023)", "(Sample and Person 2023)"
+        )
+    ),
+    "CITE-04": _blocks(
+        lambda b: _insert_after(
+            b,
+            _find(b, "p", "Earlier imaginary"),
+            (
+                "p",
+                'One imaginary engineer said "testing is the part of the work that nobody ever wants to plan." The others agreed.',
+            ),
+        )
+    ),
+    "CITE-05": _blocks(
+        lambda b: _insert_after(b, _find(b, "p", "Earlier imaginary"), ("p", LONG_SENTENCE * 12))
+    ),
+    "REF-01": _blocks(lambda b: _edit_text(b, "ref", "Demo Org", " [accessed 01.10.2026.]", "")),
+    "REF-02": _blocks(
+        lambda b: (
+            [x for x in b if x[0] != "ref"]
+            + [_find(b, "ref", "Demo"), _find(b, "ref", "Sample"), _find(b, "ref", "Example")]
+        )
+    ),
+    "REF-03": _with(
+        lambda d: setattr(_para(d, "Example, A.").paragraph_format, "first_line_indent", Cm(0))
+    ),
+    "REF-04": _blocks(
+        lambda b: _with_ref(
+            b,
+            "Wikipedia. (2025). Software testing. Available at: https://en.wikipedia.org/wiki/Software_testing [accessed 01.10.2026.]",
+            "Wikipedia, 2025",
+            "Sample",
+        )
+    ),
+    "REF-AI-01": _blocks(
+        lambda b: _with_ref(
+            b,
+            "OpenAI. (2026). ChatGPT. Available at: https://chatgpt.com/share/demo [accessed 02.10.2026.]",
+            "OpenAI, 2026",
+            "Example",
+        )
+    ),
+    # --- consistency
+    "CONS-01": _blocks(
+        lambda b: _edit_text(
+            b, "p", "The invented results", "works best.", "works best for team behaviour."
+        )
+    ),
+    "CONS-02": _blocks(
+        lambda b: _edit_text(b, "p", "The study uses", "invented data", "invented QA data")
+    ),
+    "CONS-03": _blocks(
+        lambda b: _edit_text(
+            b, "p", "The invented results", "works best.", "works best for this dataset."
+        )
+    ),
+    # --- title page
+    "TITLE-01": _blocks(lambda b: [x for x in b if x != ("line", "Supervisor: Dr. Demo Adviser")]),
+    "TITLE-02": _blocks(
+        lambda b: _replace(b, ("line", "Demo City 2026"), ("line", "Demo City 2025"))
+    ),
 }
+
+
+def _toc_mismatch() -> docx.Document:
+    """TOC-02: one contents entry no longer matches its heading."""
+    doc = _doc()
+    entry = _para(doc, "1.1. Research method")  # the first match is the contents line
+    for run in entry.runs:
+        if run.text.startswith("1.1. Research method"):
+            run.text = run.text.replace("method", "methods")
+    return doc
+
+
+SAMPLES["TOC-02"] = _toc_mismatch
 
 
 # ------------------------------------------- extra documents built inside tests
 
 
+def make_clean() -> docx.Document:
+    return _doc()
+
+
 def make_landscape_rotated() -> docx.Document:
-    """Clean doc + a second, landscape section whose margins are rotated (allowed)."""
-    doc = make_clean()
-    new = doc.add_section()
-    new.orientation = WD_ORIENT.LANDSCAPE
-    new.page_width, new.page_height = Cm(29.7), Cm(21)
-    # Rotated clockwise: top=left(3), right=top(2), bottom=right(2), left=bottom(2).
-    new.top_margin, new.right_margin = Cm(3.0), Cm(2.0)
-    new.bottom_margin, new.left_margin = Cm(2.0), Cm(2.0)
-    doc.add_paragraph("A wide table would go on this landscape page.")
-    return doc
+    """Clean doc + a landscape appendix whose margins are rotated (allowed)."""
+    blocks = [
+        *clean_blocks(),
+        ("landscape",),
+        ("hu", "Appendices"),
+        ("p", "A wide table would go on this landscape page."),
+    ]
+    return build_document(blocks)
 
 
 def make_theme_font_only() -> docx.Document:
@@ -217,8 +694,14 @@ def make_theme_font_only() -> docx.Document:
     return build_document(clean_blocks(), normal_font=None)
 
 
+def blocks_copy() -> list[Block]:
+    return deepcopy(clean_blocks())
+
+
 def generate(out_dir: Path = SAMPLES_DIR) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
+    for old in out_dir.glob("*.docx"):
+        old.unlink()
     written = []
     for name, factory in SAMPLES.items():
         path = out_dir / f"{name}.docx"

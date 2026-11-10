@@ -10,22 +10,25 @@ never uploaded.
 
 The full plan is in [BUILD_PROMPT.md](BUILD_PROMPT.md).
 
-**Status: stage 1 of 8, the engine core.** For now there is a Python rules engine
-with a command line. The web app arrives in stages 4–6.
+**Status: stage 2 of 8: all rules, readiness score, security.** For now there is
+a Python rules engine with a command line. The web app arrives in stages 4–6.
 
 ## What works now
 
 - Safe opening of .docx files. It rejects .doc, .odt, password-protected files,
-  macros, damaged files, zip bombs and XML tricks.
-- A read-only `DocumentView` that works out the *effective* font and size of every
-  piece of text. It follows Word's layers: run → character style → paragraph style
-  → basedOn chain → document defaults → theme.
-- Rules: PAGE-01 margins, PAGE-02 paper size, TEXT-01 body font, TEXT-02 body font
-  size, HEAD-03 no skipped heading levels.
+  macros, damaged files, zip bombs and XML tricks (XXE, billion laughs).
+- A read-only `DocumentView` that resolves Word's formatting layers (run →
+  character style → paragraph style → basedOn chain → list level → document
+  defaults → theme). It also reads fields (table of contents, page numbers),
+  headers and footers per section, list numbering, tables, images, footnotes,
+  text boxes and language.
+- **All 53 rules of BUILD_PROMPT §5**, each tested with a synthetic sample that
+  breaks exactly that rule.
+- The **readiness score** (0–100, fixed formula in `engine/thesischeck/scoring.py`).
 - Profiles: `demo` (made-up values, clearly labelled) and a draft
   `rtu-fcsite-bachelor`. The RTU layout values come from the official RTU thesis
-  template (2024), and the official template passes the profile with 0 findings.
-  Open items are in [docs/rtu-profile-open-items.md](docs/rtu-profile-open-items.md).
+  template (2024). Open items are in
+  [docs/rtu-profile-open-items.md](docs/rtu-profile-open-items.md).
 
 ## Developer setup (engine)
 
@@ -47,6 +50,7 @@ Check a document:
 cd engine
 ../.venv/bin/python -m thesischeck check tests/samples/clean.docx --profile demo
 ../.venv/bin/python -m thesischeck check my-thesis.docx --profile rtu-fcsite-bachelor --json
+../.venv/bin/python tools/make_spelling_pairs.py  # regenerate the UK/US spelling list
 ```
 
 Exit codes: `0` no findings, `1` findings, `2` usage problem, `3` file refused.

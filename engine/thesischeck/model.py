@@ -152,8 +152,7 @@ class Report:
     created_at: str
     stats: dict[str, int]
     findings: list[Finding]
-    # The score formula arrives in stage 2 (scoring.py); until then this is None.
-    score: dict[str, Any] | None
+    score: dict[str, Any]  # see scoring.py
     skipped_rules: list[SkippedRule]
     version: int = REPORT_VERSION
 

@@ -20,15 +20,17 @@ def profiles_dir(tmp_path):
 
 
 def test_cli_clean_docx_has_zero_findings(profiles_dir, capsys):
-    code = main(["check", str(SAMPLES_DIR / "clean.docx"), "--profiles-dir", str(profiles_dir)])
+    args = ["check", str(SAMPLES_DIR / "clean.docx"), "--today", "2026-11-10"]
+    code = main([*args, "--profiles-dir", str(profiles_dir)])
     out = capsys.readouterr().out
     assert code == 0
     assert "0 finding(s)" in out
+    assert "Readiness score: 100/100 — Ready" in out
     assert "not a plagiarism or AI-text detector" in out
 
 
 def test_cli_json_output(profiles_dir, capsys):
-    args = ["check", str(SAMPLES_DIR / "TEXT-01.docx"), "--json"]
+    args = ["check", str(SAMPLES_DIR / "TEXT-01.docx"), "--json", "--today", "2026-11-10"]
     code = main([*args, "--profiles-dir", str(profiles_dir)])
     report = json.loads(capsys.readouterr().out)
     assert code == 1
@@ -60,6 +62,7 @@ def test_report_contract(demo_profile):
         "part", "paragraph_index", "section_index", "page_estimate", "heading_path", "snippet",
     }  # fmt: skip
     assert finding["id"] == "TEXT-01#1"
+    assert set(report["score"]) == {"version", "value", "band", "penalty", "capped"}
     assert finding["category"] == "text"
     json.dumps(report)  # must be JSON-serialisable for the browser worker
 

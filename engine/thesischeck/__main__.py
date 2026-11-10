@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 
 from .api import check
@@ -37,6 +38,11 @@ def _print_human(report: dict) -> None:
     print(
         f"Document: {stats['paragraphs']} paragraphs, {stats['words']} words, "
         f"~{stats['pages_estimate']} pages"
+    )
+    score = report["score"]
+    print(
+        f"Readiness score: {score['value']}/100 — {score['band']}"
+        + (" (capped: a required part or title-page field is missing)" if score["capped"] else "")
     )
     findings = report["findings"]
     print(f"\n{len(findings)} finding(s)")
@@ -71,6 +77,11 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--profile", default="demo", help="profile ID or compiled .json path")
         p.add_argument("--profiles-dir", type=Path, default=DEFAULT_PROFILES_DIR)
         p.add_argument("--json", action="store_true", help="print the raw report JSON")
+        p.add_argument(
+            "--today",
+            type=date.fromisoformat,
+            help="pretend today is YYYY-MM-DD (for reproducible checks/tests)",
+        )
     args = parser.parse_args(argv)
 
     if args.command in ("fix", "annotate"):
@@ -86,8 +97,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
+        now = datetime.combine(args.today, time(12), UTC) if args.today else None
         report = check(
-            args.file.read_bytes(), load_profile_file(profile_path), file_name=args.file.name
+            args.file.read_bytes(),
+            load_profile_file(profile_path),
+            file_name=args.file.name,
+            now=now,
         )
     except EngineError as err:
         print(f"{err.code}: {err.message}", file=sys.stderr)

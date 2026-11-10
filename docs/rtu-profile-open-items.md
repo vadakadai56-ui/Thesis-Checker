@@ -45,6 +45,31 @@ page setup and footers, and the instructions written inside it. Each rule's
    git-ignored). The repo is public, so I didn't commit RTU's file. Should it go in
    `docs/sources/`?
 
+### Found by checking the template itself (stage 2)
+
+Run on the untouched template, the RTU profile reports 7 findings. Two of them
+may be problems in the template rather than in ThesisCheck:
+
+4. **No page numbers on the last pages.** The template's last section (LIST OF
+   REFERENCES + APPENDIXES) has an empty footer, so those pages have no number
+   (PGNUM-02). Is that intended, or a template mistake?
+5. **Formula explanation lines.** The "where Qg – …" lines under the example
+   formula have no first-line indent (style Normal, not Text), so TEXT-06 flags
+   them. Should lines like that be exempt?
+
+The other findings are expected for an unfilled template: `<…>` placeholders and
+no year on the title page, and no "Tools used in writing this thesis" paragraph.
+
+### Latvian wording (assumed): please confirm
+
+To recognise a Latvian-language thesis, the profile also accepts these headings:
+SATURS, IEVADS, REZULTĀTI UN SECINĀJUMI / SECINĀJUMI, IZMANTOTĀS INFORMĀCIJAS
+AVOTI / INFORMĀCIJAS AVOTU SARAKSTS, PIELIKUMI, plus "Darba izpildes un
+novērtējuma lapa". For the title page it accepts "Rīgas Tehniskā universitāte",
+"fakultāte", "institūts", "studiju programma", "apliecības Nr.", "bakalaura darbs",
+"maģistra darbs", "zinātniskais vadītājs" and "RĪGA <year>". These are my
+assumptions, not from a source.
+
 ## Still TODO — not in the template or the slides
 
 | Rule | What I need |
@@ -58,7 +83,8 @@ page setup and footers, and the instructions written inside it. Each rule's
 | LIST-01 | Are lists of figures/tables required? |
 | CITE-01, CITE-02, REF-01 | The reference format. The template's examples look like ISO 690 ("Available from: …"). Which standard? |
 | CONS-01..03 | Do you want these consistency checks for RTU? |
-| `structure.word_limits`, `literature_review_headings` | If any |
+| `structure.keyword_labels` | How the key words are introduced in the Abstract (e.g. "Key words:" / "Atslēgas vārdi:") |
+| `structure.literature_review_headings` | Which chapters are literature reviews (for CITE-05) |
 | `ai_disclosure.heading_phrases.lv` | Latvian wording of "Tools used in writing this thesis" |
 
 ## Assumed defaults — confirm or change

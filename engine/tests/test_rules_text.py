@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from docx.shared import Pt
 
 from conftest import rule_ids, run_doc, run_sample
 from thesischeck.document_view import build_view
@@ -99,3 +100,18 @@ def test_latvian_letters_use_hansi_font(demo_profile):
     (finding,) = run_doc(doc, demo_profile)["findings"]
     assert finding["rule_id"] == "TEXT-01"
     assert finding["found"] == "Arial"
+
+
+def test_profile_non_body_styles_are_skipped(demo_profile):
+    """Styles listed in the profile's text.non_body_styles are not body text."""
+    from docx.enum.style import WD_STYLE_TYPE
+
+    doc = make_clean()
+    code = doc.styles.add_style("Code", WD_STYLE_TYPE.PARAGRAPH)
+    code.font.name = "Arial Narrow"
+    code.font.size = Pt(11)
+    doc.add_paragraph("print('hello')", style=code)
+    assert sorted(rule_ids(run_doc(doc, demo_profile))) == ["TEXT-01", "TEXT-02"]
+
+    profile = {**demo_profile, "text": {"non_body_styles": ["code"]}}  # case-insensitive
+    assert rule_ids(run_doc(doc, profile)) == []

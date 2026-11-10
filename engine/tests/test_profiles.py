@@ -42,10 +42,17 @@ def test_rtu_profile_lists_every_rule(rtu_profile):
     assert rtu_profile["status"] == "draft"
 
 
-def test_rtu_layout_rules_wait_for_the_guideline(rtu_profile):
-    """BUILD_PROMPT: every PAGE/TEXT/HEAD/PGNUM/FIG/TAB value stays TODO(source)."""
-    for rid in ["PAGE-01", "TEXT-01", "TEXT-02", "TEXT-03", "TEXT-05", "TEXT-06", "HEAD-02"]:
-        assert rtu_profile["rules"][rid]["expected"] == "TODO", rid
+def test_rtu_layout_values_come_from_the_template(rtu_profile):
+    """Layout values are filled ONLY from the RTU template, each citing it."""
+    rules = rtu_profile["rules"]
+    assert rules["TEXT-01"]["expected"] == {"font": "Times New Roman"}
+    assert rules["TEXT-02"]["expected"] == {"size_pt": 12.0}
+    assert rules["PAGE-01"]["expected"]["left_cm"] == 3.18
+    for rid in ["PAGE-01", "PAGE-02", "TEXT-01", "TEXT-02", "TEXT-03", "TEXT-06", "HEAD-02"]:
+        assert rules[rid]["guideline_ref"].startswith("rtu-template-2024"), rid
+    # Things the template does not say stay TODO.
+    for rid in ["PAGE-03", "TEXT-07", "FIG-04", "TAB-04", "LIST-01", "CITE-01"]:
+        assert rules[rid]["guideline_ref"] == "TODO", rid
 
 
 def test_rtu_source_rules_cite_the_slides(rtu_profile):
@@ -60,9 +67,10 @@ def test_rtu_source_rules_cite_the_slides(rtu_profile):
 def test_rtu_pending_rules_are_reported_as_not_checked(rtu_profile):
     report = run_sample("clean", rtu_profile)
     skipped = {s["rule_id"]: s["reason"] for s in report["skipped_rules"]}
-    assert skipped["PAGE-01"] == REASON_PENDING
+    assert skipped["PAGE-03"] == REASON_PENDING
     assert skipped["REF-AI-01"] == REASON_NOT_IMPLEMENTED
-    assert report["findings"] == []
+    # clean.docx follows the DEMO margins, so under RTU only the margins differ.
+    assert rule_ids(report) == ["PAGE-01"]
 
 
 def test_todo_not_allowed_in_verified_profile():

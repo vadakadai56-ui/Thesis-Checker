@@ -72,6 +72,12 @@ class RuleEntry(_Strict):
     blocking: bool = False
 
 
+class TextSettings(_Strict):
+    # Paragraph style names (case-insensitive) that are NOT body text for TEXT-01/02,
+    # because the university formats them differently on purpose.
+    non_body_styles: list[str] = []
+
+
 class Source(_Strict):
     id: str
     title: str
@@ -93,8 +99,10 @@ class ProfileModel(_Strict):
     date_format: str
     sources: list[Source] = []
     rules: dict[str, RuleEntry]
+    text: TextSettings = TextSettings()
     structure: dict[str, Any] = {}
     captions: dict[str, Any] = {}
+    title_page: dict[str, Any] = {}
     ai_disclosure: dict[str, Any] = {}
     manual_checklist: list[str] = []
 

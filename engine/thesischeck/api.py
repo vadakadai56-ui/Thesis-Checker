@@ -37,7 +37,8 @@ def check(
     prof = _as_profile(profile)
     sha256 = hashlib.sha256(data).hexdigest()
     document = open_docx(data)
-    view = build_view(document)
+    non_body = prof.extra.get("text", {}).get("non_body_styles", [])
+    view = build_view(document, non_body)
     findings, skipped = run_checks(view, prof)
 
     report = Report(

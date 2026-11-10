@@ -17,6 +17,7 @@ piece of text can come from (first match wins):
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -365,8 +366,14 @@ def _theme_root(document: Any) -> Any | None:
     return None
 
 
-def build_view(document: Any) -> DocumentView:
-    """Build the DocumentView from a python-docx Document. Reads only; changes nothing."""
+def build_view(document: Any, non_body_styles: Iterable[str] = ()) -> DocumentView:
+    """Build the DocumentView from a python-docx Document. Reads only; changes nothing.
+
+    `non_body_styles` comes from the profile (`text.non_body_styles`): paragraph
+    style names the university deliberately formats differently from body text
+    (e.g. RTU's "Code" style is Arial Narrow 11 pt), so the body-text rules skip them.
+    """
+    extra_non_body = {name.casefold() for name in non_body_styles}
     body = document.element.body
     resolver = StyleResolver(document.styles.element, _theme_root(document))
 
@@ -423,6 +430,7 @@ def build_view(document: Any) -> DocumentView:
             and not in_table  # tables may legitimately use smaller text
             and bool(text.strip())
             and not _NON_BODY_STYLE_RE.match(style_name or "")
+            and (style_name or "").casefold() not in extra_non_body
         )
 
         paragraphs.append(

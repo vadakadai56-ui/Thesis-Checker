@@ -23,8 +23,9 @@ with a command line. The web app arrives in stages 4–6.
 - Rules: PAGE-01 margins, PAGE-02 paper size, TEXT-01 body font, TEXT-02 body font
   size, HEAD-03 no skipped heading levels.
 - Profiles: `demo` (made-up values, clearly labelled) and a draft
-  `rtu-fcsite-bachelor`. Most RTU values are waiting for the faculty guideline; see
-  [docs/rtu-profile-open-items.md](docs/rtu-profile-open-items.md).
+  `rtu-fcsite-bachelor`. The RTU layout values come from the official RTU thesis
+  template (2024), and the official template passes the profile with 0 findings.
+  Open items are in [docs/rtu-profile-open-items.md](docs/rtu-profile-open-items.md).
 
 ## Developer setup (engine)
 

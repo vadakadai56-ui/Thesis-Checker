@@ -5,11 +5,14 @@
 # `python tools/compile_profiles.py`.
 #
 # HOW TO READ THIS FILE
-#   TODO          = waiting for the faculty formatting guideline. A rule whose
-#                   `expected` or `guideline_ref` is TODO is NOT checked; the app
-#                   lists it as "not yet checked". Never invent these values.
+#   TODO          = no source yet. A rule whose `expected` or `guideline_ref` is
+#                   TODO is NOT checked; the app lists it as "not yet checked".
+#                   Never invent these values.
 #   (assumed)     = a default from BUILD_PROMPT that the owner may change.
-#   ai-slides / plag-slides = the two RTU FCSITE slide decks listed in `sources`.
+#   rtu-template-2024 = values READ from the official RTU FCSITE thesis template
+#                   (RTU_k_thesis_template_2024.dotx): its styles, page setup,
+#                   footers and the instructions written inside it.
+#   ai-slides / plag-slides = the two RTU FCSITE slide decks in `sources`.
 #   Severities are (assumed) unless a source says otherwise.
 #
 # The open items are listed for the owner in docs/rtu-profile-open-items.md.
@@ -20,63 +23,184 @@ name: "RTU FCSITE — Bachelor thesis (draft)"
 university: Riga Technical University
 faculty: Faculty of Computer Science, Information Technology and Energy
 programme: TODO
-degree_level: bachelor              # (assumed) master gets its own file later
-languages: [lv, en]                 # (assumed)
+degree_level: bachelor              # (assumed) the template serves bachelor AND master
+languages: [lv, en]                 # rtu-template-2024: ABSTRACT + ANOTĀCIJA (Latvian translation)
 citation_style: author-date         # (assumed) evidence: "(OpenAI, 2026)" in ai-slides p.4
 date_format: "DD.MM.YYYY."          # ai-slides p.4 ("[accessed DD.MM.YYYY.]")
 sources:
   - {id: ai-slides, title: "AI generated text, Academic integrity assessment", file: docs/sources/rtu-fcsite-ai-generated-text-academic-integrity-EN.pdf}
   - {id: plag-slides, title: "Academic integrity in theses (2026)", file: docs/sources/rtu-fcsite-academic-integrity-in-theses-2026.pdf}
+  - {id: rtu-template-2024, title: "RTU FCSITE thesis template 2024 (EN)", file: docs/sources/RTU_k_thesis_template_2024.dotx}
 
 rules:
   # ---------------------------------------------------------------- Page setup
-  PAGE-01: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PAGE-01:
+    severity: error
+    autofix: true
+    # Template: <w:pgMar top=1440 bottom=1440 left=1803 right=1803> twips in all 4
+    # sections. NOTE: these equal Word's built-in "Normal" margins — please confirm
+    # they are RTU's real requirement and not just Word's default.
+    expected: {top_cm: 2.54, bottom_cm: 2.54, left_cm: 3.18, right_cm: 3.18, tolerance_cm: 0.05}
+    rule_text: "Margins: top 2.54 cm, bottom 2.54 cm, left 3.18 cm, right 3.18 cm."
+    guideline_ref: "rtu-template-2024: page setup (all sections)"
   PAGE-02:
     severity: error
     autofix: true
-    expected: {paper: A4}           # (assumed)
+    expected: {paper: A4}
     rule_text: "Use A4 paper."
-    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
+    guideline_ref: "rtu-template-2024: page setup (A4, all sections)"
   PAGE-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  PAGE-04: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PAGE-04:
+    severity: warning
+    autofix: true
+    expected: {gutter_cm: 0, mirror_margins: false}
+    rule_text: "No gutter and no mirrored margins."
+    guideline_ref: "rtu-template-2024: page setup (gutter 0, margins not mirrored)"
 
   # ---------------------------------------------------------------------- Text
-  TEXT-01: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TEXT-02: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TEXT-03: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TEXT-01:
+    severity: error
+    autofix: true
+    expected: {font: Times New Roman}
+    rule_text: "Body text is Times New Roman."
+    guideline_ref: "rtu-template-2024: styles 'Normal' / 'Text'"
+  TEXT-02:
+    severity: error
+    autofix: true
+    expected: {size_pt: 12}
+    rule_text: "Body text is 12 pt."
+    guideline_ref: "rtu-template-2024: styles 'Normal' / 'Text'"
+  TEXT-03:
+    severity: error
+    autofix: true
+    expected: {line_spacing: 1.5}
+    rule_text: "Body text has 1.5 line spacing."
+    guideline_ref: "rtu-template-2024: style 'Normal' (line spacing 1.5 lines)"
   TEXT-04:
     severity: warning
     autofix: true
-    expected: {alignment: justified}  # (assumed)
+    expected: {alignment: justified}
     rule_text: "Body text is justified."
-    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
-  TEXT-05: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TEXT-06: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+    guideline_ref: "rtu-template-2024: style 'Normal' (justified)"
+  TEXT-05:
+    severity: warning
+    autofix: true
+    expected: {before_pt: 0, after_pt: 0}
+    rule_text: "No extra space before or after body paragraphs."
+    guideline_ref: "rtu-template-2024: style 'Normal' (spacing 0 pt before / 0 pt after)"
+  TEXT-06:
+    severity: warning
+    autofix: true
+    expected: {first_line_cm: 1.27}
+    rule_text: "Body paragraphs have a 1.27 cm first-line indent."
+    guideline_ref: "rtu-template-2024: style 'Text' (first line 1.27 cm)"
   TEXT-07: {severity: info, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
   TEXT-08: {severity: info, autofix: true, rule_text: TODO, guideline_ref: TODO}
 
   # ------------------------------------------------------------------ Headings
-  HEAD-01: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
-  HEAD-02: {severity: error, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  HEAD-01:
+    severity: warning
+    autofix: false
+    rule_text: >-
+      Use the template's heading styles: Level-1-heading (chapters), Level-2-heading
+      (sections), Level-3-heading (sub-sections), Heading-excluded-from-table-of-contents
+      (ABSTRACT, ANOTĀCIJA, TABLE OF CONTENTS, LIST OF REFERENCES).
+    guideline_ref: "rtu-template-2024: Introduction, list of formatting styles"
+  HEAD-02:
+    severity: error
+    autofix: true
+    # Level 1's style names the font "Times New Roman Bold"; it is Times New Roman, bold.
+    expected:
+      1: {font: Times New Roman, size_pt: 14, bold: true, caps: true, align: center, before_pt: 0, after_pt: 12}
+      2: {font: Times New Roman, size_pt: 14, bold: true, caps: false, align: center, before_pt: 12, after_pt: 12}
+      3: {font: Times New Roman, size_pt: 12, bold: true, caps: false, align: center, before_pt: 12, after_pt: 12}
+    rule_text: >-
+      Level 1: 14 pt bold capitals, centred, 12 pt after. Level 2: 14 pt bold,
+      centred, 12 pt before and after. Level 3: 12 pt bold, centred, 12 pt before
+      and after. All Times New Roman.
+    guideline_ref: "rtu-template-2024: styles 'Heading 1–3' (used by Level-1/2/3-heading)"
   HEAD-03:
     severity: warning
     autofix: false
     rule_text: "Heading levels go 1 → 2 → 3 without skipping a level."
-    guideline_ref: "(assumed) general practice — not yet confirmed by an RTU source"
-  HEAD-04: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  HEAD-05: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  HEAD-06: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+    guideline_ref: "rtu-template-2024: chapter → section → sub-section structure"
+  HEAD-04:
+    severity: warning
+    autofix: true
+    expected:
+      format: ["1.", "1.1.", "1.1.1."]
+      unnumbered: [ABSTRACT, ANOTĀCIJA, TABLE OF CONTENTS, INTRODUCTION, RESULTS AND CONCLUSIONS, LIST OF REFERENCES, APPENDIXES]
+    rule_text: >-
+      Chapters are numbered 1., 1.1., 1.1.1. (number followed by a full stop).
+      Abstract, Anotācija, Table of contents, Introduction, Results and conclusions,
+      List of references and Appendixes have no number.
+    guideline_ref: "rtu-template-2024: table of contents and headings"
+  HEAD-05:
+    severity: warning
+    autofix: true
+    expected: {1: all_caps, 2: as_typed, 3: as_typed}
+    rule_text: "Level-1 headings are in capitals (set by the style, not typed)."
+    guideline_ref: "rtu-template-2024: style 'Heading 1' (All caps)"
+  HEAD-06:
+    severity: warning
+    autofix: true
+    expected: {new_page: true}
+    rule_text: "Each level-1 heading (chapter) starts on a new page."
+    guideline_ref: "rtu-template-2024: page break before every chapter"
 
   # -------------------------------------------------------------- Page numbers
-  PGNUM-01: {severity: error, autofix: true, rule_text: TODO, guideline_ref: TODO}
-  PGNUM-02: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  PGNUM-03: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  PGNUM-01:
+    severity: error
+    autofix: true
+    rule_text: "Pages are numbered with a page-number field."
+    guideline_ref: "rtu-template-2024: footer (PAGE field)"
+  PGNUM-02:
+    severity: warning
+    autofix: true
+    expected: {position: bottom_center, format: arabic}
+    rule_text: "Page numbers: bottom centre, Arabic numerals (style 'Page-number')."
+    guideline_ref: "rtu-template-2024: footer, style 'Page-number'"
+  PGNUM-03:
+    severity: warning
+    autofix: true
+    expected: {title_page_shows_number: false, title_page_counted: false, first_number_on: assessment_sheet}
+    rule_text: >-
+      The title page has no page number and is not counted; numbering starts at 1
+      on the Work Performance and Assessment Sheet.
+    guideline_ref: "rtu-template-2024: section 1 'different first page'; section 2 starts at 1"
 
   # ----------------------------------------------------------------- Structure
-  STRUCT-01: {severity: error, autofix: false, blocking: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  STRUCT-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  STRUCT-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  STRUCT-04: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  STRUCT-01:
+    severity: error
+    autofix: false
+    blocking: true
+    expected: {from: structure.required_sections}
+    rule_text: >-
+      The thesis contains: title page, Work Performance and Assessment Sheet,
+      ABSTRACT, ANOTĀCIJA, TABLE OF CONTENTS, INTRODUCTION, chapters, RESULTS AND
+      CONCLUSIONS, LIST OF REFERENCES (and APPENDIXES if there are any).
+    guideline_ref: "rtu-template-2024: document structure"
+  STRUCT-02:
+    severity: warning
+    autofix: false
+    expected: {from: structure.required_sections}
+    rule_text: "The parts are in the template's order."
+    guideline_ref: "rtu-template-2024: document structure"
+  STRUCT-03:
+    severity: warning
+    autofix: false
+    expected: {max_pages: 1, keywords_min: 3, keywords_max: 5}
+    rule_text: >-
+      The Abstract has 3–5 key words and is at most 1 page; the Anotācija is its
+      Latvian translation. (Report only — ThesisCheck never shortens text.)
+    guideline_ref: "rtu-template-2024: ABSTRACT page"
+  STRUCT-04:
+    severity: warning
+    autofix: false
+    # Only section lengths are in the template; total thesis length is still unknown.
+    expected: {introduction_pages: [1, 2], conclusions_pages: [1, 3], total: TODO}
+    rule_text: "Introduction 1–2 pages; Results and conclusions 1–3 pages; total length: TODO."
+    guideline_ref: "rtu-template-2024: INTRODUCTION and RESULTS AND CONCLUSIONS pages"
   STRUCT-05:
     severity: info                  # info: only required if AI tools were used
     autofix: false
@@ -86,18 +210,62 @@ rules:
     guideline_ref: "ai-slides p.5"
 
   # ------------------------------------------------------------------ Contents
-  TOC-01: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
-  TOC-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
-  TOC-03: {severity: info, autofix: true, rule_text: TODO, guideline_ref: TODO}
+  TOC-01:
+    severity: warning
+    autofix: false
+    rule_text: "The thesis has an automatic (Word-generated) table of contents."
+    guideline_ref: "rtu-template-2024: TABLE OF CONTENTS (TOC field)"
+  TOC-02:
+    severity: warning
+    autofix: false
+    rule_text: "Table of contents entries match the headings."
+    guideline_ref: "rtu-template-2024: TABLE OF CONTENTS (TOC field)"
+  TOC-03:
+    severity: info
+    autofix: true
+    rule_text: "The table of contents is up to date."
+    guideline_ref: "rtu-template-2024: TABLE OF CONTENTS (TOC field)"
 
   # ---------------------------------------------------------- Figures & tables
-  FIG-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  FIG-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  FIG-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  FIG-01:
+    severity: warning
+    autofix: false
+    expected: {from: captions.figure}
+    rule_text: "Every figure has a caption like \"Fig. 2.1. Title of the figure\" (style 'Figure-name')."
+    guideline_ref: "rtu-template-2024: example figure, style 'Figure-name'"
+  FIG-02:
+    severity: warning
+    autofix: false
+    expected: {from: captions.figure}
+    rule_text: "Figures are numbered per chapter: Fig. 2.1., Fig. 2.2., …"
+    guideline_ref: "rtu-template-2024: example figure"
+  FIG-03:
+    severity: warning
+    autofix: false
+    expected: {from: captions.figure}
+    rule_text: "The figure caption is BELOW the figure, centred, bold."
+    guideline_ref: "rtu-template-2024: example figure, style 'Figure-name'"
   FIG-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
-  TAB-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TAB-02: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TAB-03: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+  TAB-01:
+    severity: warning
+    autofix: false
+    expected: {from: captions.table}
+    rule_text: >-
+      Every table has a number line "Table 2.1" (right-aligned, bold) and a name
+      line (centred, bold) above it (styles 'Table-number', 'Table-name').
+    guideline_ref: "rtu-template-2024: example table"
+  TAB-02:
+    severity: warning
+    autofix: false
+    expected: {from: captions.table}
+    rule_text: "Tables are numbered per chapter: Table 2.1, Table 2.2, …"
+    guideline_ref: "rtu-template-2024: example table"
+  TAB-03:
+    severity: warning
+    autofix: false
+    expected: {from: captions.table}
+    rule_text: "The table number and name are ABOVE the table."
+    guideline_ref: "rtu-template-2024: example table"
   TAB-04: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
   LIST-01: {severity: warning, autofix: false, expected: TODO, rule_text: TODO, guideline_ref: TODO}
 
@@ -131,10 +299,15 @@ rules:
   REF-02:
     severity: warning
     autofix: false
-    expected: {order: alphabetical}  # (assumed) for author–date
+    expected: {order: alphabetical}  # (assumed); the template's 3 examples are alphabetical
     rule_text: "The reference list is in alphabetical order."
-    guideline_ref: "(assumed) — not yet confirmed by an RTU source"
-  REF-03: {severity: warning, autofix: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
+    guideline_ref: "(assumed) evidence: example LIST OF REFERENCES in rtu-template-2024"
+  REF-03:
+    severity: warning
+    autofix: true
+    expected: {hanging_indent_cm: 1.0, line_spacing: 1.5, before_pt: 0, after_pt: 0}
+    rule_text: "Reference entries have a 1 cm hanging indent (style 'Info-source')."
+    guideline_ref: "rtu-template-2024: style 'Info-source'"
   REF-04:
     severity: info
     autofix: false
@@ -156,17 +329,54 @@ rules:
   CONS-03: {severity: info, autofix: false, rule_text: TODO, guideline_ref: TODO}
 
   # ---------------------------------------------------------------- Title page
-  TITLE-01: {severity: error, autofix: false, blocking: true, expected: TODO, rule_text: TODO, guideline_ref: TODO}
-  TITLE-02: {severity: warning, autofix: false, rule_text: TODO, guideline_ref: TODO}
+  TITLE-01:
+    severity: error
+    autofix: false
+    blocking: true
+    expected: {from: title_page.fields}
+    rule_text: >-
+      The title page shows: RIGA TECHNICAL UNIVERSITY, the faculty, the institute,
+      the student's name and surname, the study programme, the student ID number,
+      the thesis title, the type of work, the scientific adviser (degree, position,
+      name) and "RIGA <year>".
+    guideline_ref: "rtu-template-2024: title page"
+  TITLE-02:
+    severity: warning
+    autofix: false
+    rule_text: "The year on the title page is the current year."
+    guideline_ref: "rtu-template-2024: title page (\"RIGA <20….>\")"
+
+text:
+  # Styles the template formats differently from body text on purpose, so the
+  # body font/size rules skip them (rtu-template-2024 list of styles):
+  #   Code = Arial Narrow 11 pt, Table-explanation = 10 pt,
+  #   Appendices-heading = 22 pt bold capitals, Formulas = equation lines.
+  non_body_styles: [Code, Table-explanation, Appendices-heading, Formulas]
 
 structure:
-  required_sections: TODO
+  # In order (rtu-template-2024). `heading` = the text of its heading (any case).
+  required_sections:
+    - {id: title_page, heading: null}
+    - {id: assessment_sheet, heading: null, starts_with: "Work Performance and Assessment Sheet"}
+    - {id: abstract, heading: ABSTRACT}
+    - {id: anotacija, heading: ANOTĀCIJA}
+    - {id: toc, heading: TABLE OF CONTENTS}
+    - {id: introduction, heading: INTRODUCTION}
+    - {id: chapters, heading: null}
+    - {id: conclusions, heading: RESULTS AND CONCLUSIONS}
+    - {id: references, heading: LIST OF REFERENCES}
+  optional_sections:
+    - {id: appendixes, heading: APPENDIXES, after: references}
   word_limits: TODO
   literature_review_headings: TODO
 
 captions:
-  figure: TODO
-  table: TODO
+  figure: {label: "Fig.", pattern: "Fig. {chapter}.{n}. {title}", per_chapter: true, position: below, align: center, bold: true, style: Figure-name}
+  table: {label: "Table", pattern: "Table {chapter}.{n}", per_chapter: true, position: above, align: right, bold: true, style: Table-number, name_style: Table-name}
+  formula: {pattern: "({chapter}.{n}.)", align: right, style: Formulas}
+
+title_page:
+  fields: [university, faculty, institute, student_name, study_programme, student_id, title, work_type, adviser, city_year]
 
 ai_disclosure:
   heading_phrases:
@@ -180,6 +390,7 @@ manual_checklist:
   - "References are placed where the source is used, not only at paragraph end."
   - "Reused parts of my own earlier work (e.g. bachelor thesis) are referenced."
   - "Supervisor has signed."
+  - "I have signed the Work Performance and Assessment Sheet (\"The author of the graduation thesis\")."  # rtu-template-2024
   - "Declaration of originality is signed."
   - "Uploaded to the RTU system."
-  - "Latvian and English abstracts say the same thing."  # (assumed)
+  - "The ANOTĀCIJA is a translation of the ABSTRACT (they say the same thing)."  # rtu-template-2024

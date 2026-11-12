@@ -10,8 +10,9 @@ never uploaded.
 
 The full plan is in [BUILD_PROMPT.md](BUILD_PROMPT.md).
 
-**Status: stage 3 of 8: auto-fix and annotated copy.** For now there is
-a Python rules engine with a command line. The web app arrives in stages 4–6.
+**Status: stage 4 of 8: the engine runs in the browser.** There is a Python rules
+engine with a command line, and a bare test page that runs the same engine inside
+the browser (Pyodide in a Web Worker). The real interface arrives in stage 5.
 
 ## What works now
 
@@ -35,6 +36,24 @@ a Python rules engine with a command line. The web app arrives in stages 4–6.
   `rtu-fcsite-bachelor`. The RTU layout values come from the official RTU thesis
   template (2024). Open items are in
   [docs/rtu-profile-open-items.md](docs/rtu-profile-open-items.md).
+
+## Run the app locally
+
+Needs Node.js 22+ and the Python venv described below (profiles are compiled with it).
+
+```bash
+npm ci            # install the exact pinned packages
+npm run setup     # once: download Pyodide + packages (SHA-256 checked), pack the engine, compile profiles
+npm run dev       # start the test page at http://localhost:5173
+```
+
+`npm run build` writes the publishable site to `dist/`. `npm test` runs everything:
+pytest, the message-schema tests (Vitest) and the browser tests (Playwright).
+`npm run perf` measures sizes and writes [docs/perf.md](docs/perf.md).
+
+Nothing is downloaded from other sites while the app runs: Pyodide and the Python
+packages are copied into `public/` at setup time and served from the app's own
+address. The browser tests fail if any request leaves the app's origin.
 
 ## Developer setup (engine)
 
@@ -71,5 +90,8 @@ engine/profiles/      one YAML file per university/programme (source of truth)
 engine/schema/        Pydantic validation of profiles (build/test time only)
 engine/tools/         profile compiler, sample generator
 engine/tests/         pytest suite + generated sample documents
-docs/                 sources, open items for the RTU profile
+src/                  the web app (Svelte); src/lib/worker/ is the only door to the engine
+scripts/              setup/build scripts (fetch Pyodide, pack the engine, perf budget)
+tests-e2e/            browser tests (Playwright)
+docs/                 sources, open items for the RTU profile, perf.md
 ```

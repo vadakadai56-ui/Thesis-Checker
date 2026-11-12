@@ -1,0 +1,32 @@
+{
+  "name": "thesischeck",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ThesisCheck — offline thesis format checker (PWA)",
+  "scripts": {
+    "setup": "node scripts/fetch-pyodide.mjs && node scripts/pack-engine.mjs && node scripts/run-python.mjs engine/tools/compile_profiles.py",
+    "dev": "node scripts/pack-engine.mjs && vite",
+    "build": "node scripts/pack-engine.mjs && node scripts/run-python.mjs engine/tools/compile_profiles.py && vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "perf": "node scripts/perf-budget.mjs",
+    "test:py": "node scripts/run-python.mjs -m pytest engine",
+    "test:unit": "vitest run",
+    "test:e2e": "npm run build && playwright test --trace off",
+    "test": "npm run test:py && npm run test:unit && npm run test:e2e"
+  },
+  "dependencies": {
+    "pyodide": "314.0.7",
+    "svelte": "5.57.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte-check": "4.7.8",
+    "typescript": "6.0.3",
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
+  }
+}

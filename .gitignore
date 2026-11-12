@@ -25,3 +25,7 @@ tools-private/
 marketing/raw/
 
 .DS_Store
+
+# e2e generated files
+tests-e2e/.expected/
+tests-e2e/.results/
